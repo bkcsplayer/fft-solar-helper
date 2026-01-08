@@ -25,6 +25,8 @@ import {
   VisibilityOff,
   Save as SaveIcon,
   Download as DownloadIcon,
+  Language as LanguageIcon,
+  CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
 import api from '../../services/api';
 
@@ -75,6 +77,8 @@ const Settings = () => {
     company_address: '',
     company_phone: '',
     company_email: '',
+    custom_domain: '',
+    server_ip: '',
   });
 
   useEffect(() => {
@@ -227,6 +231,7 @@ const Settings = () => {
             <Tab icon={<EmailIcon />} label="Email & Notifications" iconPosition="start" />
             <Tab icon={<SettingsIcon />} label="Company Info" iconPosition="start" />
             <Tab icon={<TelegramIcon />} label="API Settings" iconPosition="start" />
+            <Tab icon={<LanguageIcon />} label="域名设置" iconPosition="start" />
           </Tabs>
         </Box>
 
@@ -546,6 +551,106 @@ const Settings = () => {
                   disabled={loading}
                 >
                   Save Company Info
+                </Button>
+              </Box>
+            </Grid>
+          </Grid>
+        </TabPanel>
+
+        {/* Domain Settings Tab */}
+        <TabPanel value={tabValue} index={4}>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom>
+                自定义域名绑定
+              </Typography>
+              <Divider sx={{ mb: 3 }} />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Alert severity="info" sx={{ mb: 3 }}>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <strong>当前服务器IP:</strong> {systemSettings.server_ip || '74.48.192.171'}
+                </Typography>
+                <Typography variant="body2">
+                  请先在 GoDaddy DNS 管理中配置 A 记录，然后在下方输入您的域名。
+                </Typography>
+              </Alert>
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="自定义域名"
+                value={systemSettings.custom_domain}
+                onChange={handleSettingChange('custom_domain')}
+                placeholder="fftsolaradmin.yourdomain.com"
+                helperText="输入您在 GoDaddy 配置的完整域名"
+                InputProps={{
+                  endAdornment: systemSettings.custom_domain && (
+                    <InputAdornment position="end">
+                      <CheckCircleIcon color="success" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mt: 2 }}>
+                GoDaddy DNS 配置步骤
+              </Typography>
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                <Typography variant="body2" component="div">
+                  <ol style={{ margin: 0, paddingLeft: 20 }}>
+                    <li>登录 GoDaddy 账户，进入 DNS 管理</li>
+                    <li>添加 A 记录：
+                      <ul>
+                        <li><strong>类型:</strong> A</li>
+                        <li><strong>主机:</strong> @ (主域名) 或 fftsolaradmin (子域名)</li>
+                        <li><strong>指向:</strong> {systemSettings.server_ip || '74.48.192.171'}</li>
+                        <li><strong>TTL:</strong> 600 秒（默认）</li>
+                      </ul>
+                    </li>
+                    <li>保存 DNS 配置</li>
+                    <li>等待 DNS 生效（通常 5-30 分钟）</li>
+                    <li>在上方输入框中输入配置好的域名并保存</li>
+                  </ol>
+                </Typography>
+              </Alert>
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
+                示例配置：
+              </Typography>
+              <Box
+                sx={{
+                  p: 2,
+                  bgcolor: '#f5f5f5',
+                  borderRadius: 1,
+                  fontFamily: 'monospace',
+                  fontSize: '0.9rem',
+                }}
+              >
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <strong>主域名:</strong> example.com → @ → 74.48.192.171
+                </Typography>
+                <Typography variant="body2">
+                  <strong>子域名:</strong> fftsolaradmin.example.com → fftsolaradmin → 74.48.192.171
+                </Typography>
+              </Box>
+            </Grid>
+
+            <Grid item xs={12}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                <Button
+                  variant="contained"
+                  startIcon={<SaveIcon />}
+                  onClick={handleSaveSystemSettings}
+                  disabled={loading || !systemSettings.custom_domain}
+                >
+                  保存域名设置
                 </Button>
               </Box>
             </Grid>

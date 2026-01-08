@@ -1,0 +1,135 @@
+==========================================
+FFT Solar CRM - 快速部署指南
+==========================================
+
+当前状态：
+✓ 所有代码文件已就绪
+✓ 项目依赖已安装（npm packages）
+✓ 环境配置文件已创建（.env）
+⏳ 需要安装 PostgreSQL 数据库
+
+==========================================
+方法 1：自动部署（推荐）
+==========================================
+
+1. 右键点击"一键部署.bat"
+2. 选择"以管理员身份运行"
+3. 按照提示操作
+4. 完成后运行"启动系统.bat"
+
+==========================================
+方法 2：手动部署
+==========================================
+
+步骤 1: 安装 PostgreSQL
+-----------------------
+1. 下载 PostgreSQL 14：
+   https://www.postgresql.org/download/windows/
+
+2. 运行安装程序
+   - 设置密码：postgres（记住这个密码）
+   - 端口：5432（默认）
+   - 其他选项：默认即可
+
+3. 验证安装
+   打开命令行输入：psql --version
+
+步骤 2: 创建数据库
+-----------------------
+打开命令行（CMD 或 PowerShell）：
+
+createdb -U postgres fft_solar_crm
+
+（输入密码：postgres）
+
+步骤 3: 导入数据库结构
+-----------------------
+cd f:\claude-vs-projects\fft-solar-help
+psql -U postgres -d fft_solar_crm -f database\schema.sql
+
+（输入密码：postgres）
+
+成功后会看到 CREATE TABLE 和 INSERT 等信息
+
+步骤 4: 启动系统
+-----------------------
+双击运行"启动系统.bat"
+
+或在命令行中执行：
+npm run dev
+
+步骤 5: 访问系统
+-----------------------
+打开浏览器访问：http://localhost:3000
+
+登录账号：
+  用户名：admin
+  密码：admin123
+
+==========================================
+常见问题
+==========================================
+
+问题1：PostgreSQL 密码不是 postgres
+-----------------------
+修改 .env 文件中的 DB_PASSWORD 为你的实际密码
+
+问题2：端口被占用
+-----------------------
+修改 .env 文件中的 PORT 为其他端口（如 5001）
+同时修改 client/package.json 中的 proxy
+
+问题3：数据库连接失败
+-----------------------
+1. 检查 PostgreSQL 服务是否启动
+   - 打开服务管理器（services.msc）
+   - 查找 postgresql-x64-14
+   - 确保状态为"正在运行"
+
+2. 检查 .env 文件中的数据库配置
+
+问题4：需要重置数据库
+-----------------------
+psql -U postgres -d fft_solar_crm -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+psql -U postgres -d fft_solar_crm -f database\schema.sql
+
+==========================================
+快捷命令
+==========================================
+
+# 仅启动后端
+npm run server
+
+# 仅启动前端
+npm run client
+
+# 同时启动前后端
+npm run dev
+
+# 查看数据库
+psql -U postgres -d fft_solar_crm
+
+# 查看所有表
+psql -U postgres -d fft_solar_crm -c "\dt"
+
+# 查看用户数据
+psql -U postgres -d fft_solar_crm -c "SELECT * FROM users;"
+
+==========================================
+获取帮助
+==========================================
+
+详细文档：
+- DEPLOYMENT_GUIDE_CN.md - 完整部署指南
+- README.md - 项目说明
+- QUICKSTART.md - 快速上手
+- DEVELOPMENT.md - 开发指南
+
+如有问题，请检查：
+1. 后端日志（命令行输出）
+2. 前端控制台（浏览器 F12）
+3. 数据库连接（psql 测试）
+
+==========================================
+
+祝使用愉快！🎉

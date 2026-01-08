@@ -76,7 +76,8 @@ services:
     container_name: fft-solar-frontend
     restart: unless-stopped
     ports:
-      - "5201:5201"
+      - "80:5201" # HTTP 标准端口，支持域名直接访问
+      - "5201:5201" # 保留原端口用于本地开发
     networks:
       - fft-solar-network
     depends_on:
