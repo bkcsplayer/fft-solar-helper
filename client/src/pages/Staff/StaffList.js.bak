@@ -1,0 +1,214 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
+  IconButton,
+  Chip,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Paper,
+} from '@mui/material';
+import { Edit, Add, People } from '@mui/icons-material';
+import api from '../../services/api';
+import {
+  pageContainerStyle,
+  pageTitleStyle,
+  modernTableContainerStyle,
+  modernTableHeadStyle,
+  modernTableRowStyle,
+  modernButtonStyle,
+  modernIconButtonStyle,
+  modernInputStyle,
+  headerBarStyle,
+  filterContainerStyle,
+  getModernChipStyle,
+} from '../../styles/modernStyles';
+
+const roleNames = {
+  leader: '领队',
+  installer: '安装人员',
+  electrician: '电工',
+};
+
+const roleVariants = {
+  leader: 'success',
+  installer: 'warning',
+  electrician: 'info',
+};
+
+const payTypeNames = {
+  per_panel: '按板子数',
+  per_project: '按项目',
+};
+
+const StaffList = () => {
+  const [staff, setStaff] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [roleFilter, setRoleFilter] = useState('');
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchStaff();
+  }, [roleFilter]);
+
+  const fetchStaff = async () => {
+    try {
+      const params = {};
+      if (roleFilter) params.role = roleFilter;
+
+      const response = await api.get('/staff', { params });
+      setStaff(response.data);
+    } catch (error) {
+      console.error('Failed to fetch staff:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Box sx={pageContainerStyle}>
+      <Box sx={headerBarStyle}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{
+            background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+            borderRadius: '14px',
+            p: 1.5,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 14px rgba(139, 92, 246, 0.3)',
+          }}>
+            <People sx={{ color: 'white', fontSize: 28 }} />
+          </Box>
+          <Typography sx={pageTitleStyle} style={{ marginBottom: 0 }}>
+            员工管理
+          </Typography>
+        </Box>
+        <Box sx={filterContainerStyle}>
+          <FormControl sx={{ minWidth: 150, ...modernInputStyle }}>
+            <InputLabel>角色筛选</InputLabel>
+            <Select
+              value={roleFilter}
+              label="角色筛选"
+              onChange={(e) => setRoleFilter(e.target.value)}
+            >
+              <MenuItem value="">全部</MenuItem>
+              <MenuItem value="leader">领队</MenuItem>
+              <MenuItem value="installer">安装人员</MenuItem>
+              <MenuItem value="electrician">电工</MenuItem>
+            </Select>
+          </FormControl>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => navigate('/staff/new')}
+            sx={modernButtonStyle}
+          >
+            添加员工
+          </Button>
+        </Box>
+      </Box>
+
+      <TableContainer component={Paper} sx={modernTableContainerStyle}>
+        <Table>
+          <TableHead sx={modernTableHeadStyle}>
+            <TableRow>
+              <TableCell>姓名</TableCell>
+              <TableCell>角色</TableCell>
+              <TableCell>电话</TableCell>
+              <TableCell>Email</TableCell>
+              <TableCell>薪资类型</TableCell>
+              <TableCell>薪资标准</TableCell>
+              <TableCell>状态</TableCell>
+              <TableCell align="center">操作</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                  <Typography color="text.secondary">加载中...</Typography>
+                </TableCell>
+              </TableRow>
+            ) : staff.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                  <Typography color="text.secondary">暂无员工数据</Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              staff.map((person) => (
+                <TableRow key={person.id} sx={modernTableRowStyle}>
+                  <TableCell>
+                    <Typography sx={{ fontWeight: 600, color: '#1e293b' }}>
+                      {person.name}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={roleNames[person.role]}
+                      size="small"
+                      sx={getModernChipStyle(roleVariants[person.role])}
+                    />
+                  </TableCell>
+                  <TableCell>{person.phone}</TableCell>
+                  <TableCell>
+                    <Typography sx={{ color: '#3b82f6' }}>
+                      {person.email}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" color="text.secondary">
+                      {payTypeNames[person.pay_type]}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography sx={{ 
+                      fontWeight: 700,
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                    }}>
+                      ${parseFloat(person.pay_rate).toFixed(2)}
+                      <Typography component="span" variant="body2" sx={{ color: '#64748b', ml: 0.5 }}>
+                        {person.pay_type === 'per_panel' ? '/板' : '/项目'}
+                      </Typography>
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={person.is_active ? '在职' : '离职'}
+                      size="small"
+                      sx={getModernChipStyle(person.is_active ? 'success' : 'default')}
+                    />
+                  </TableCell>
+                  <TableCell align="center">
+                    <IconButton
+                      size="small"
+                      onClick={() => navigate(`/staff/${person.id}/edit`)}
+                      sx={modernIconButtonStyle}
+                    >
+                      <Edit fontSize="small" sx={{ color: '#3b82f6' }} />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
+  );
+};
+
+export default StaffList;
