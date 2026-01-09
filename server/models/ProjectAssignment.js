@@ -33,6 +33,19 @@ const ProjectAssignment = sequelize.define('ProjectAssignment', {
   calculated_pay: {
     type: DataTypes.DECIMAL(10, 2)
   },
+  paid_amount: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0.00,
+    allowNull: false
+  },
+  payment_notes: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  last_payment_date: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
   is_notified: {
     type: DataTypes.BOOLEAN,
     defaultValue: false

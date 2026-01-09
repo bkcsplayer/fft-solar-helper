@@ -323,6 +323,65 @@ exports.assignStaff = async (req, res) => {
   }
 };
 
+// Update staff payment
+exports.updateStaffPayment = async (req, res) => {
+  try {
+    const { assignmentId } = req.params;
+    const { paid_amount, payment_notes } = req.body;
+
+    console.log('=== UPDATE STAFF PAYMENT ===');
+    console.log('Assignment ID:', assignmentId);
+    console.log('Request body:', req.body);
+    console.log('Paid Amount:', paid_amount);
+
+    const assignment = await ProjectAssignment.findByPk(assignmentId);
+
+    if (!assignment) {
+      console.log('Assignment not found:', assignmentId);
+      return res.status(404).json({ error: 'Assignment not found' });
+    }
+
+    console.log('Current assignment:', assignment.toJSON());
+
+    // Validate amount doesn't exceed calculated pay
+    if (parseFloat(paid_amount) > parseFloat(assignment.calculated_pay)) {
+      return res.status(400).json({
+        error: '已付薪资不能超过实发薪资'
+      });
+    }
+
+    if (parseFloat(paid_amount) < 0) {
+      return res.status(400).json({
+        error: '已付薪资不能为负数'
+      });
+    }
+
+    console.log('Updating with paid_amount:', paid_amount);
+
+    await assignment.update({
+      paid_amount: paid_amount || 0,
+      payment_notes,
+      last_payment_date: new Date()
+    });
+
+    console.log('Updated assignment, refetching...');
+
+    const updatedAssignment = await ProjectAssignment.findByPk(assignmentId, {
+      include: [{ model: Staff, as: 'staff' }]
+    });
+
+    console.log('Updated assignment data:', updatedAssignment.toJSON());
+
+    res.json({
+      message: '已付薪资更新成功',
+      assignment: updatedAssignment
+    });
+  } catch (error) {
+    console.error('Update payment error:', error);
+    res.status(500).json({ error: 'Failed to update payment' });
+  }
+};
+
 exports.removeAssignment = async (req, res) => {
   try {
     const assignment = await ProjectAssignment.findByPk(req.params.assignmentId);

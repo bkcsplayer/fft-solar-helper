@@ -169,42 +169,119 @@ const sendProjectAssignmentEmail = async (staffEmail, staffName, projectData, ro
 
 // Send staff timesheet email
 const sendStaffTimesheetEmail = async (staffEmail, staffName, timesheetData) => {
-  const { startDate, endDate, projects, totalPay } = timesheetData;
+  const { startDate, endDate, projects, totalExpected, totalPaid, totalUnpaid, projectCount } = timesheetData;
 
-  const projectRows = projects.map(p => `
-    <tr>
-      <td style="border: 1px solid #ddd; padding: 8px;">${p.address}</td>
-      <td style="border: 1px solid #ddd; padding: 8px;">${p.assigned_at}</td>
-      <td style="border: 1px solid #ddd; padding: 8px;">${p.role}</td>
-      <td style="border: 1px solid #ddd; padding: 8px;">$${parseFloat(p.calculated_pay).toFixed(2)}</td>
-    </tr>
+  // Get SMTP config
+  const smtpConfig = await getSMTPConfig();
+
+  if (!smtpConfig.host || !smtpConfig.auth.user) {
+    return { success: false, error: 'SMTP not configured' };
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: smtpConfig.host,
+    port: smtpConfig.port,
+    secure: smtpConfig.secure,
+    auth: smtpConfig.auth,
+    tls: { rejectUnauthorized: false }
+  });
+
+  const fromAddress = smtpConfig.fromName
+    ? `"${smtpConfig.fromName}" <${smtpConfig.auth.user}>`
+    : smtpConfig.auth.user;
+
+  // Generate Project Cards HTML
+  const projectCards = projects.map(p => `
+    <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 16px; overflow: hidden;">
+      <div style="padding: 16px; border-bottom: 1px solid #f3f4f6;">
+        <div style="font-weight: 600; color: #1f2937; margin-bottom: 8px;">📍 ${p.address}</div>
+        <div style="display: flex; gap: 16px; font-size: 13px; color: #6b7280; margin-bottom: 8px;">
+           <span style="display: inline-block;">📦 ${p.panel_quantity} panels</span>
+           <span style="display: inline-block;">📅 ${p.assigned_at}</span>
+        </div>
+        <div style="font-size: 13px; color: #6b7280;">
+          ⚡ Total: ${p.total_watt.toLocaleString()} W
+        </div>
+      </div>
+      <div style="padding: 12px 16px; background: #f9fafb; display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-weight: 600; color: #059669; font-size: 14px;">
+           💰 Staff Pay: $${parseFloat(p.calculated_pay).toFixed(2)}
+        </div>
+        ${p.paid_amount > 0 ? `
+          <div style="font-size: 12px; color: #059669; background: #d1fae5; padding: 2px 8px; border-radius: 9999px;">
+             已付: $${parseFloat(p.paid_amount).toFixed(2)}
+          </div>
+        ` : ''}
+      </div>
+    </div>
   `).join('');
 
   const mailOptions = {
-    from: process.env.EMAIL_FROM,
+    from: fromAddress,
     to: staffEmail,
     subject: `工资单 - ${startDate} 至 ${endDate}`,
     html: `
-      <h2>工资单</h2>
-      <p>您好 ${staffName}，</p>
-      <p>以下是您在 ${startDate} 至 ${endDate} 期间的工作记录：</p>
-      <table style="border-collapse: collapse; width: 100%;">
-        <thead>
-          <tr style="background-color: #f2f2f2;">
-            <th style="border: 1px solid #ddd; padding: 8px;">项目地址</th>
-            <th style="border: 1px solid #ddd; padding: 8px;">分配日期</th>
-            <th style="border: 1px solid #ddd; padding: 8px;">角色</th>
-            <th style="border: 1px solid #ddd; padding: 8px;">薪资</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${projectRows}
-        </tbody>
-      </table>
-      <p style="margin-top: 20px;"><strong>总计薪资：$${parseFloat(totalPay).toFixed(2)}</strong></p>
-      <p>项目总数：${projects.length}</p>
-      <hr>
-      <small>此邮件由 FFT Solar CRM 系统自动发送</small>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px 20px; text-align: center; }
+    .content { padding: 30px 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1 style="color: #ffffff; margin: 0; font-size: 24px;">工资单明细</h1>
+      <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 14px;">${startDate} 至 ${endDate}</p>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+      <p style="margin-bottom: 24px; color: #374151;">您好 <strong>${staffName}</strong>，</p>
+      
+      <!-- Summary Cards -->
+      <div style="margin-bottom: 30px;">
+         <h3 style="color: #667eea; margin-top:0; border-bottom: 2px dashed #e5e7eb; padding-bottom: 10px;">💰 薪资汇总</h3>
+         
+         <!-- Total Expected -->
+         <div style="background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); padding: 16px; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid #ec4899;">
+             <div style="font-size: 12px; color: #be185d; text-transform: uppercase; letter-spacing: 1px;">应支付 (Total Expected)</div>
+             <div style="font-size: 24px; font-weight: bold; color: #be185d; margin-top: 4px;">$${totalExpected.toFixed(2)}</div>
+         </div>
+
+         <div style="display: flex; gap: 12px;">
+             <!-- Paid -->
+             <div style="flex: 1; background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); padding: 16px; border-radius: 8px; border-left: 4px solid #059669;">
+                 <div style="font-size: 11px; color: #047857; text-transform: uppercase;">已支付 (Paid)</div>
+                 <div style="font-size: 20px; font-weight: bold; color: #047857; margin-top: 4px;">$${totalPaid.toFixed(2)}</div>
+             </div>
+             
+             <!-- Unpaid -->
+             <div style="flex: 1; background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%); padding: 16px; border-radius: 8px; border-left: 4px solid #f97316;">
+                 <div style="font-size: 11px; color: #c2410c; text-transform: uppercase;">待支付 (Unpaid)</div>
+                 <div style="font-size: 20px; font-weight: bold; color: #c2410c; margin-top: 4px;">$${totalUnpaid.toFixed(2)}</div>
+             </div>
+         </div>
+      </div>
+
+      <!-- Project List -->
+      <div>
+         <h3 style="color: #667eea; margin-bottom: 16px; border-bottom: 2px dashed #e5e7eb; padding-bottom: 10px;">📋 项目明细 (${projects.length})</h3>
+         ${projectCards}
+      </div>
+
+      <div style="margin-top: 30px; text-align: center; color: #9ca3af; font-size: 12px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+        此邮件由 FFT Solar CRM 系统自动发送
+      </div>
+    </div>
+  </div>
+</body>
+</html>
     `
   };
 
@@ -221,6 +298,25 @@ const sendStaffTimesheetEmail = async (staffEmail, staffName, timesheetData) => 
 const sendVehicleReportEmail = async (adminEmail, vehicleData, maintenanceLogs) => {
   const { plate_number, model, current_mileage } = vehicleData;
 
+  // Get SMTP config
+  const smtpConfig = await getSMTPConfig();
+
+  if (!smtpConfig.host || !smtpConfig.auth.user) {
+    return { success: false, error: 'SMTP not configured' };
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: smtpConfig.host,
+    port: smtpConfig.port,
+    secure: smtpConfig.secure,
+    auth: smtpConfig.auth,
+    tls: { rejectUnauthorized: false }
+  });
+
+  const fromAddress = smtpConfig.fromName
+    ? `"${smtpConfig.fromName}" <${smtpConfig.auth.user}>`
+    : smtpConfig.auth.user;
+
   const logRows = maintenanceLogs.map(log => `
     <tr>
       <td style="border: 1px solid #ddd; padding: 8px;">${log.maintenance_date}</td>
@@ -234,7 +330,7 @@ const sendVehicleReportEmail = async (adminEmail, vehicleData, maintenanceLogs) 
   const totalCost = maintenanceLogs.reduce((sum, log) => sum + parseFloat(log.cost || 0), 0);
 
   const mailOptions = {
-    from: process.env.EMAIL_FROM,
+    from: fromAddress,
     to: adminEmail,
     subject: `车辆维护报告 - ${plate_number}`,
     html: `

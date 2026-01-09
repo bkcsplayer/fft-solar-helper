@@ -97,6 +97,10 @@ const ProjectDetail = () => {
   });
   const [savingInverter, setSavingInverter] = useState(false);
 
+  // Payment editing
+  const [paymentEdits, setPaymentEdits] = useState({});
+  const [savingPayment, setSavingPayment] = useState(false);
+
   // File management
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -238,6 +242,59 @@ const ProjectDetail = () => {
       await fetchProjectDetail();
     } catch (error) {
       alert('移除分配失败：' + (error.response?.data?.error || error.message));
+    }
+  };
+
+  const handlePaymentChange = (assignmentId, value, maxValue) => {
+    const newValue = parseFloat(value) || 0;
+
+    if (newValue < 0) {
+      alert('已付薪资不能为负数');
+      return;
+    }
+
+    if (newValue > maxValue) {
+      alert(`已付薪资不能超过实发薪资 $${maxValue.toFixed(2)}`);
+      return;
+    }
+
+    setPaymentEdits(prev => ({
+      ...prev,
+      [assignmentId]: newValue
+    }));
+  };
+
+  const savePayment = async (assignmentId) => {
+    const paidAmount = paymentEdits[assignmentId];
+
+    if (paidAmount === undefined) return;
+
+    setSavingPayment(true);
+    try {
+      const response = await api.put(`/projects/${id}/assignments/${assignmentId}/payment`, {
+        paid_amount: paidAmount
+      });
+
+      console.log('Payment update response:', response.data);
+
+      // Refresh project data
+      await fetchProjectDetail();
+
+      // Clear edit state
+      setPaymentEdits(prev => {
+        const newEdits = { ...prev };
+        delete newEdits[assignmentId];
+        return newEdits;
+      });
+
+      setNotifySuccess('已付薪资已更新');
+      setTimeout(() => setNotifySuccess(''), 3000);
+    } catch (error) {
+      console.error('Save payment error:', error);
+      console.error('Error response:', error.response);
+      alert(error.response?.data?.error || '保存失败：' + error.message);
+    } finally {
+      setSavingPayment(false);
     }
   };
 
@@ -763,64 +820,114 @@ const ProjectDetail = () => {
                     <TableCell>角色</TableCell>
                     <TableCell>电话</TableCell>
                     <TableCell>Email</TableCell>
-                    <TableCell>预计薪资</TableCell>
+                    <TableCell align="right">实发薪资</TableCell>
+                    <TableCell align="right">已付薪资</TableCell>
+                    <TableCell align="right">未付薪资</TableCell>
                     <TableCell>通知状态</TableCell>
                     <TableCell align="center">操作</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {project.assignments.map((assignment) => (
-                    <TableRow key={assignment.id} sx={{ '& td': { borderBottom: '1px solid #e2e8f0', py: 2 } }}>
-                      <TableCell>
-                        <Typography sx={{ fontWeight: 600, color: '#1e293b' }}>
-                          {assignment.staff?.name}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={
-                            assignment.role_in_project === 'leader' ? '领队' :
-                              assignment.role_in_project === 'installer' ? '安装人员' : '电工'
-                          }
-                          size="small"
-                          sx={getModernChipStyle(assignment.role_in_project === 'leader' ? 'primary' : 'default')}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ color: '#3b82f6' }}>{assignment.staff?.phone}</TableCell>
-                      <TableCell sx={{ color: '#64748b' }}>{assignment.staff?.email || '-'}</TableCell>
-                      <TableCell>
-                        <Typography sx={{
-                          fontWeight: 700,
-                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                        }}>
-                          ${parseFloat(assignment.calculated_pay || 0).toFixed(2)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        {assignment.is_notified ? (
-                          <Chip label="已通知" size="small" sx={getModernChipStyle('success')} />
-                        ) : (
-                          <Chip label="未通知" size="small" sx={getModernChipStyle('default')} />
-                        )}
-                      </TableCell>
-                      <TableCell align="center">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleRemoveAssignment(assignment.id)}
-                          sx={{
-                            color: '#ef4444',
-                            '&:hover': {
-                              background: 'rgba(239, 68, 68, 0.1)',
+                  {project.assignments.map((assignment) => {
+                    const totalPay = parseFloat(assignment.calculated_pay || 0);
+                    const paidAmount = parseFloat(assignment.paid_amount || 0);
+                    const unpaidAmount = totalPay - paidAmount;
+
+                    return (
+                      <TableRow key={assignment.id} sx={{ '& td': { borderBottom: '1px solid #e2e8f0', py: 2 } }}>
+                        <TableCell>
+                          <Typography sx={{ fontWeight: 600, color: '#1e293b' }}>
+                            {assignment.staff?.name}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={
+                              assignment.role_in_project === 'leader' ? '领队' :
+                                assignment.role_in_project === 'installer' ? '安装人员' : '电工'
                             }
+                            size="small"
+                            sx={getModernChipStyle(assignment.role_in_project === 'leader' ? 'primary' : 'default')}
+                          />
+                        </TableCell>
+                        <TableCell sx={{ color: '#3b82f6' }}>{assignment.staff?.phone}</TableCell>
+                        <TableCell sx={{ color: '#64748b' }}>{assignment.staff?.email || '-'}</TableCell>
+
+                        {/* 实发薪资 */}
+                        <TableCell align="right">
+                          <Typography sx={{
+                            fontWeight: 700,
+                            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                          }}>
+                            ${totalPay.toFixed(2)}
+                          </Typography>
+                        </TableCell>
+
+                        {/* 已付薪资 - 可编辑 */}
+                        <TableCell align="right">
+                          <TextField
+                            type="number"
+                            size="small"
+                            value={paymentEdits[assignment.id] !== undefined ? paymentEdits[assignment.id] : paidAmount}
+                            onChange={(e) => handlePaymentChange(assignment.id, e.target.value, totalPay)}
+                            onBlur={() => savePayment(assignment.id)}
+                            inputProps={{
+                              min: 0,
+                              max: totalPay,
+                              step: 0.01,
+                              style: { textAlign: 'right', width: '90px', fontSize: '0.875rem' }
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                '&:hover fieldset': {
+                                  borderColor: '#3b82f6',
+                                },
+                                '&.Mui-focused fieldset': {
+                                  borderColor: '#3b82f6',
+                                }
+                              }
+                            }}
+                          />
+                        </TableCell>
+
+                        {/* 未付薪资 - 只读 */}
+                        <TableCell
+                          align="right"
+                          sx={{
+                            bgcolor: '#f8fafc',
+                            fontWeight: 600,
+                            color: unpaidAmount > 0 ? '#ef4444' : '#10b981'
                           }}
                         >
-                          <Delete fontSize="small" />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                          ${unpaidAmount.toFixed(2)}
+                        </TableCell>
+
+                        <TableCell>
+                          {assignment.is_notified ? (
+                            <Chip label="已通知" size="small" sx={getModernChipStyle('success')} />
+                          ) : (
+                            <Chip label="未通知" size="small" sx={getModernChipStyle('default')} />
+                          )}
+                        </TableCell>
+                        <TableCell align="center">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleRemoveAssignment(assignment.id)}
+                            sx={{
+                              color: '#ef4444',
+                              '&:hover': {
+                                background: 'rgba(239, 68, 68, 0.1)',
+                              }
+                            }}
+                          >
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             ) : (

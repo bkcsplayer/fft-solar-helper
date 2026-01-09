@@ -22,6 +22,7 @@ router.delete('/:id/inverters/:inverterId', projectController.deleteInverter);
 router.get('/:id/assignments', projectController.getAssignments);
 router.post('/:id/assignments', projectController.assignStaff);
 router.delete('/:id/assignments/:assignmentId', projectController.removeAssignment);
+router.put('/:id/assignments/:assignmentId/payment', projectController.updateStaffPayment);
 router.post('/:id/notify', projectController.notifyStaff);
 
 // Progress

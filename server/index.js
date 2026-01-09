@@ -17,6 +17,16 @@ app.use(express.urlencoded({ extended: true }));
 // Static files (uploads)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`========================================`);
+  console.log(`${req.method} ${req.url}`);
+  console.log(`Full path: ${req.path}`);
+  console.log(`Base URL: ${req.baseUrl}`);
+  console.log(`========================================`);
+  next();
+});
+
 // API Routes
 app.use('/api', routes);
 

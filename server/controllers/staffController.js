@@ -303,7 +303,14 @@ exports.getStaffProjects = async (req, res) => {
         {
           model: Project,
           as: 'project',
-          attributes: ['id', 'address', 'customer_name', 'status']
+          attributes: ['id', 'address', 'customer_name', 'status', 'panel_quantity', 'panel_watt', 'installation_date'],
+          include: [
+            {
+              model: Client,
+              as: 'client',
+              attributes: ['id', 'company_name', 'rate_per_watt']
+            }
+          ]
         }
       ],
       order: [['assigned_at', 'DESC']]
@@ -350,26 +357,36 @@ exports.sendStaffTimesheet = async (req, res) => {
         {
           model: Project,
           as: 'project',
-          attributes: ['address']
+          attributes: ['address', 'panel_quantity', 'panel_watt']
         }
       ],
       order: [['assigned_at', 'ASC']]
     });
 
-    const totalPay = assignments.reduce((sum, a) => sum + parseFloat(a.calculated_pay || 0), 0);
+    const totalExpected = assignments.reduce((sum, a) => sum + parseFloat(a.calculated_pay || 0), 0);
+    const totalPaid = assignments.reduce((sum, a) => sum + parseFloat(a.paid_amount || 0), 0);
+    const totalUnpaid = totalExpected - totalPaid;
 
     const projects = assignments.map(a => ({
       address: a.project.address,
       assigned_at: a.assigned_at.toISOString().split('T')[0],
       role: a.role_in_project,
-      calculated_pay: a.calculated_pay
+      calculated_pay: a.calculated_pay,
+      paid_amount: a.paid_amount,
+      last_payment_date: a.last_payment_date,
+      panel_quantity: a.project.panel_quantity || 0,
+      panel_watt: a.project.panel_watt || 0,
+      total_watt: (a.project.panel_quantity || 0) * (a.project.panel_watt || 0)
     }));
 
     const timesheetData = {
       startDate,
       endDate,
       projects,
-      totalPay
+      totalExpected,
+      totalPaid,
+      totalUnpaid,
+      projectCount: projects.length
     };
 
     const result = await sendStaffTimesheetEmail(staff.email, staff.name, timesheetData);
@@ -377,7 +394,7 @@ exports.sendStaffTimesheet = async (req, res) => {
     if (result.success) {
       res.json({
         message: 'Timesheet sent successfully',
-        totalPay,
+        totalPay: totalExpected,
         projectCount: projects.length
       });
     } else {

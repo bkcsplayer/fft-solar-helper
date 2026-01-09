@@ -13,6 +13,7 @@ import {
     TableContainer,
     TableHead,
     TableRow,
+    TableFooter,
     Paper,
     TextField,
     Box,
@@ -71,9 +72,40 @@ const StaffDetail = ({ open, onClose, staffId, onDelete }) => {
             });
 
             const totalPay = response.data.reduce((sum, a) => sum + parseFloat(a.calculated_pay || 0), 0);
+
+            // 保留项目的板数量和单板瓦数信息，并计算收入
+            const projectsWithDetails = response.data.map(assignment => {
+                const project = assignment.project || {};
+                const panelQuantity = project.panel_quantity || 0;
+                const panelWatt = project.panel_watt || 0;
+                const totalWatt = panelWatt * panelQuantity;
+
+                // 收入 = 总瓦数 × 单价/瓦
+                const ratePerWatt = project.client?.rate_per_watt || 0;
+                const revenue = totalWatt * ratePerWatt;
+
+                return {
+                    ...assignment,
+                    project: {
+                        ...project,
+                        panelQuantity,
+                        panelWatt,
+                        totalWatt,
+                        ratePerWatt,
+                        revenue: revenue.toFixed(2)
+                    }
+                };
+            });
+
+            const totalRevenue = projectsWithDetails.reduce((sum, a) =>
+                sum + parseFloat(a.project.revenue || 0), 0
+            );
+
             setTimesheetResult({
                 projectCount: response.data.length,
-                totalPay: totalPay.toFixed(2)
+                totalPay: totalPay.toFixed(2),
+                totalRevenue: totalRevenue.toFixed(2),
+                projects: projectsWithDetails
             });
         } catch (error) {
             console.error('Failed to calculate timesheet:', error);
@@ -255,6 +287,176 @@ const StaffDetail = ({ open, onClose, staffId, onDelete }) => {
                                 </Paper>
                             </Grid>
 
+                            {/* Statistics Cards */}
+                            <Grid item xs={12}>
+                                <Grid container spacing={2}>
+                                    {/* Total Projects */}
+                                    <Grid item xs={12} sm={6} md={3}>
+                                        <Paper
+                                            elevation={0}
+                                            sx={{
+                                                p: 2.5,
+                                                borderRadius: 2,
+                                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                                color: 'white',
+                                                transition: 'all 0.3s ease',
+                                                '&:hover': {
+                                                    transform: 'translateY(-4px)',
+                                                    boxShadow: '0 8px 24px rgba(102, 126, 234, 0.4)'
+                                                }
+                                            }}
+                                        >
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                <Box>
+                                                    <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                                                        总项目数
+                                                    </Typography>
+                                                    <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                                                        {assignments.length}
+                                                    </Typography>
+                                                </Box>
+                                                <Box sx={{
+                                                    bgcolor: 'rgba(255,255,255,0.2)',
+                                                    borderRadius: '50%',
+                                                    width: 48,
+                                                    height: 48,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    fontSize: 24
+                                                }}>
+                                                    📊
+                                                </Box>
+                                            </Box>
+                                        </Paper>
+                                    </Grid>
+
+                                    {/* Total Expected Pay */}
+                                    <Grid item xs={12} sm={6} md={3}>
+                                        <Paper
+                                            elevation={0}
+                                            sx={{
+                                                p: 2.5,
+                                                borderRadius: 2,
+                                                background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                                                color: 'white',
+                                                transition: 'all 0.3s ease',
+                                                '&:hover': {
+                                                    transform: 'translateY(-4px)',
+                                                    boxShadow: '0 8px 24px rgba(240, 147, 251, 0.4)'
+                                                }
+                                            }}
+                                        >
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                <Box>
+                                                    <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                                                        总应付
+                                                    </Typography>
+                                                    <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                                                        ${assignments.reduce((sum, a) => sum + parseFloat(a.calculated_pay || 0), 0).toFixed(2)}
+                                                    </Typography>
+                                                </Box>
+                                                <Box sx={{
+                                                    bgcolor: 'rgba(255,255,255,0.2)',
+                                                    borderRadius: '50%',
+                                                    width: 48,
+                                                    height: 48,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    fontSize: 24
+                                                }}>
+                                                    💰
+                                                </Box>
+                                            </Box>
+                                        </Paper>
+                                    </Grid>
+
+                                    {/* Total Paid */}
+                                    <Grid item xs={12} sm={6} md={3}>
+                                        <Paper
+                                            elevation={0}
+                                            sx={{
+                                                p: 2.5,
+                                                borderRadius: 2,
+                                                background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                                                color: 'white',
+                                                transition: 'all 0.3s ease',
+                                                '&:hover': {
+                                                    transform: 'translateY(-4px)',
+                                                    boxShadow: '0 8px 24px rgba(79, 172, 254, 0.4)'
+                                                }
+                                            }}
+                                        >
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                <Box>
+                                                    <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                                                        已支付
+                                                    </Typography>
+                                                    <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                                                        ${assignments.reduce((sum, a) => sum + parseFloat(a.paid_amount || 0), 0).toFixed(2)}
+                                                    </Typography>
+                                                </Box>
+                                                <Box sx={{
+                                                    bgcolor: 'rgba(255,255,255,0.2)',
+                                                    borderRadius: '50%',
+                                                    width: 48,
+                                                    height: 48,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    fontSize: 24
+                                                }}>
+                                                    ✅
+                                                </Box>
+                                            </Box>
+                                        </Paper>
+                                    </Grid>
+
+                                    {/* Total Unpaid */}
+                                    <Grid item xs={12} sm={6} md={3}>
+                                        <Paper
+                                            elevation={0}
+                                            sx={{
+                                                p: 2.5,
+                                                borderRadius: 2,
+                                                background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+                                                color: 'white',
+                                                transition: 'all 0.3s ease',
+                                                '&:hover': {
+                                                    transform: 'translateY(-4px)',
+                                                    boxShadow: '0 8px 24px rgba(250, 112, 154, 0.4)'
+                                                }
+                                            }}
+                                        >
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                <Box>
+                                                    <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+                                                        待支付
+                                                    </Typography>
+                                                    <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                                                        ${(assignments.reduce((sum, a) => sum + parseFloat(a.calculated_pay || 0), 0) -
+                                                            assignments.reduce((sum, a) => sum + parseFloat(a.paid_amount || 0), 0)).toFixed(2)}
+                                                    </Typography>
+                                                </Box>
+                                                <Box sx={{
+                                                    bgcolor: 'rgba(255,255,255,0.2)',
+                                                    borderRadius: '50%',
+                                                    width: 48,
+                                                    height: 48,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    fontSize: 24
+                                                }}>
+                                                    ⏳
+                                                </Box>
+                                            </Box>
+                                        </Paper>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+
                             {/* Project History */}
                             <Grid item xs={12}>
                                 <Paper
@@ -280,13 +482,23 @@ const StaffDetail = ({ open, onClose, staffId, onDelete }) => {
                                     <TableContainer>
                                         <Table size="small">
                                             <TableHead>
-                                                <TableRow sx={{ bgcolor: 'grey.100' }}>
-                                                    <TableCell sx={{ fontWeight: 600 }}>Project Address</TableCell>
-                                                    <TableCell sx={{ fontWeight: 600 }}>Client</TableCell>
-                                                    <TableCell sx={{ fontWeight: 600 }}>Role</TableCell>
-                                                    <TableCell sx={{ fontWeight: 600 }}>Assigned Date</TableCell>
-                                                    <TableCell align="right" sx={{ fontWeight: 600 }}>Pay</TableCell>
-                                                    <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                                                <TableRow sx={{
+                                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                                    '& th': {
+                                                        color: 'white',
+                                                        fontWeight: 700,
+                                                        borderBottom: 'none',
+                                                        fontSize: '0.85rem',
+                                                        textTransform: 'uppercase',
+                                                        letterSpacing: '0.5px'
+                                                    }
+                                                }}>
+                                                    <TableCell>Project Address</TableCell>
+                                                    <TableCell>Client</TableCell>
+                                                    <TableCell>Role</TableCell>
+                                                    <TableCell>Assigned Date</TableCell>
+                                                    <TableCell align="right">Pay</TableCell>
+                                                    <TableCell>Status</TableCell>
                                                 </TableRow>
                                             </TableHead>
                                             <TableBody>
@@ -297,22 +509,29 @@ const StaffDetail = ({ open, onClose, staffId, onDelete }) => {
                                                         </TableCell>
                                                     </TableRow>
                                                 ) : (
-                                                    assignments.map((assignment) => (
+                                                    assignments.map((assignment, index) => (
                                                         <TableRow
                                                             key={assignment.id}
                                                             sx={{
+                                                                bgcolor: index % 2 === 0 ? 'grey.50' : 'white',
+                                                                transition: 'all 0.2s ease',
                                                                 '&:hover': {
-                                                                    bgcolor: 'action.hover'
+                                                                    bgcolor: 'primary.light',
+                                                                    transform: 'scale(1.01)',
+                                                                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                                                    '& td': {
+                                                                        color: 'primary.contrastText'
+                                                                    }
                                                                 }
                                                             }}
                                                         >
-                                                            <TableCell>{assignment.project?.address || 'N/A'}</TableCell>
+                                                            <TableCell sx={{ fontWeight: 500 }}>{assignment.project?.address || 'N/A'}</TableCell>
                                                             <TableCell>{assignment.project?.client?.company_name || 'N/A'}</TableCell>
                                                             <TableCell>
                                                                 <Chip label={assignment.role_in_project} size="small" color={getRoleBadgeColor(assignment.role_in_project)} />
                                                             </TableCell>
                                                             <TableCell>{new Date(assignment.assigned_at).toLocaleDateString()}</TableCell>
-                                                            <TableCell align="right" sx={{ fontWeight: 500 }}>${parseFloat(assignment.calculated_pay || 0).toFixed(2)}</TableCell>
+                                                            <TableCell align="right" sx={{ fontWeight: 600, color: 'success.main' }}>${parseFloat(assignment.calculated_pay || 0).toFixed(2)}</TableCell>
                                                             <TableCell>
                                                                 <Chip label={assignment.project?.status || 'N/A'} size="small" color={getStatusColor(assignment.project?.status)} />
                                                             </TableCell>
@@ -320,6 +539,47 @@ const StaffDetail = ({ open, onClose, staffId, onDelete }) => {
                                                     ))
                                                 )}
                                             </TableBody>
+                                            {assignments.length > 0 && (() => {
+                                                const totalExpected = assignments.reduce((sum, a) => sum + parseFloat(a.calculated_pay || 0), 0);
+                                                const totalPaid = assignments.reduce((sum, a) => sum + parseFloat(a.paid_amount || 0), 0);
+                                                const totalUnpaid = totalExpected - totalPaid;
+
+                                                return (
+                                                    <TableFooter>
+                                                        <TableRow sx={{ bgcolor: 'primary.dark' }}>
+                                                            <TableCell colSpan={4} align="right" sx={{ fontWeight: 700, color: 'white', fontSize: '0.95rem' }}>
+                                                                汇总统计：
+                                                            </TableCell>
+                                                            <TableCell align="right" sx={{ fontWeight: 700, color: 'white' }}>
+                                                                ${totalExpected.toFixed(2)}
+                                                            </TableCell>
+                                                            <TableCell sx={{ fontWeight: 600, color: 'white' }}>
+                                                                要支付
+                                                            </TableCell>
+                                                        </TableRow>
+                                                        <TableRow sx={{ bgcolor: 'success.dark' }}>
+                                                            <TableCell colSpan={4} align="right" sx={{ fontWeight: 700, color: 'white', fontSize: '0.95rem' }}>
+                                                            </TableCell>
+                                                            <TableCell align="right" sx={{ fontWeight: 700, color: 'white' }}>
+                                                                ${totalPaid.toFixed(2)}
+                                                            </TableCell>
+                                                            <TableCell sx={{ fontWeight: 600, color: 'white' }}>
+                                                                已支付
+                                                            </TableCell>
+                                                        </TableRow>
+                                                        <TableRow sx={{ bgcolor: totalUnpaid > 0 ? 'error.dark' : 'success.main' }}>
+                                                            <TableCell colSpan={4} align="right" sx={{ fontWeight: 700, color: 'white', fontSize: '0.95rem' }}>
+                                                            </TableCell>
+                                                            <TableCell align="right" sx={{ fontWeight: 700, color: 'white' }}>
+                                                                ${totalUnpaid.toFixed(2)}
+                                                            </TableCell>
+                                                            <TableCell sx={{ fontWeight: 600, color: 'white' }}>
+                                                                未支付
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    </TableFooter>
+                                                );
+                                            })()}
                                         </Table>
                                     </TableContainer>
                                 </Paper>
@@ -397,12 +657,137 @@ const StaffDetail = ({ open, onClose, staffId, onDelete }) => {
                                                             <Typography variant="body2" color="text.secondary" gutterBottom>
                                                                 <strong>Period:</strong> {startDate} to {endDate}
                                                             </Typography>
-                                                            <Typography variant="body1" sx={{ mb: 1 }}>
+                                                            <Typography variant="body1" sx={{ mb: 2 }}>
                                                                 <strong>Projects:</strong> {timesheetResult.projectCount}
                                                             </Typography>
-                                                            <Typography variant="h5" sx={{ fontWeight: 700, color: 'primary.main' }}>
-                                                                Total Pay: ${timesheetResult.totalPay}
-                                                            </Typography>
+
+                                                            {/* 项目详细列表 */}
+                                                            {timesheetResult.projects && timesheetResult.projects.length > 0 && (
+                                                                <Box sx={{ mb: 2 }}>
+                                                                    <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600, mb: 1.5 }}>
+                                                                        Project Details:
+                                                                    </Typography>
+                                                                    {timesheetResult.projects.map((assignment, index) => (
+                                                                        <Box
+                                                                            key={index}
+                                                                            sx={{
+                                                                                mb: 1.5,
+                                                                                p: 1.5,
+                                                                                bgcolor: 'white',
+                                                                                borderRadius: 1,
+                                                                                border: '1px solid',
+                                                                                borderColor: 'divider'
+                                                                            }}
+                                                                        >
+                                                                            <Grid container spacing={1}>
+                                                                                <Grid item xs={12}>
+                                                                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                                                        📍 {assignment.project?.address || 'N/A'}
+                                                                                    </Typography>
+                                                                                </Grid>
+                                                                                {assignment.project?.installation_date && (
+                                                                                    <Grid item xs={12}>
+                                                                                        <Typography variant="caption" color="text.secondary">
+                                                                                            📅 {new Date(assignment.project.installation_date).toLocaleDateString()}
+                                                                                        </Typography>
+                                                                                    </Grid>
+                                                                                )}
+                                                                                <Grid item xs={6}>
+                                                                                    <Typography variant="caption" color="text.secondary">
+                                                                                        📦 {assignment.project?.panelQuantity || 0} panels
+                                                                                    </Typography>
+                                                                                </Grid>
+                                                                                <Grid item xs={6}>
+                                                                                    <Typography variant="caption" color="text.secondary">
+                                                                                        🔋 {assignment.project?.panelWatt || 0} W/panel
+                                                                                    </Typography>
+                                                                                </Grid>
+                                                                                <Grid item xs={12}>
+                                                                                    <Typography variant="caption" sx={{ fontWeight: 500, color: 'primary.main' }}>
+                                                                                        ⚡ Total: {assignment.project?.totalWatt?.toLocaleString() || 0} W
+                                                                                    </Typography>
+                                                                                </Grid>
+                                                                                <Grid item xs={12}>
+                                                                                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'success.main' }}>
+                                                                                        💰 Staff Pay: ${parseFloat(assignment.calculated_pay || 0).toFixed(2)}
+                                                                                    </Typography>
+                                                                                </Grid>
+                                                                            </Grid>
+                                                                        </Box>
+                                                                    ))}
+                                                                </Box>
+                                                            )}
+
+                                                            {/* 总计 */}
+                                                            <Box sx={{ pt: 2, borderTop: '2px dashed', borderColor: 'divider' }}>
+                                                                {(() => {
+                                                                    const totalExpected = parseFloat(timesheetResult.totalPay || 0);
+                                                                    const totalPaid = timesheetResult.projects?.reduce((sum, a) =>
+                                                                        sum + parseFloat(a.paid_amount || 0), 0) || 0;
+                                                                    const totalUnpaid = totalExpected - totalPaid;
+
+                                                                    return (
+                                                                        <>
+                                                                            <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mb: 1.5 }}>
+                                                                                💰 应支付: ${totalExpected.toFixed(2)}
+                                                                            </Typography>
+                                                                            <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                                                                                <Box sx={{ flex: 1, minWidth: 150 }}>
+                                                                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                                                                                        已支付
+                                                                                    </Typography>
+                                                                                    <Typography variant="h6" sx={{ fontWeight: 600, color: 'success.main' }}>
+                                                                                        ${totalPaid.toFixed(2)}
+                                                                                    </Typography>
+
+                                                                                    {/* 已支付明细 */}
+                                                                                    {(() => {
+                                                                                        const paidProjects = timesheetResult.projects?.filter(a =>
+                                                                                            parseFloat(a.paid_amount || 0) > 0
+                                                                                        ) || [];
+
+                                                                                        if (paidProjects.length === 0) return null;
+
+                                                                                        return (
+                                                                                            <Box sx={{ mt: 1.5, pl: 1, borderLeft: '3px solid', borderColor: 'success.light' }}>
+                                                                                                {paidProjects.map((project, idx) => (
+                                                                                                    <Box key={idx} sx={{ mb: 1, pb: 1, borderBottom: idx < paidProjects.length - 1 ? '1px dashed' : 'none', borderColor: 'divider' }}>
+                                                                                                        <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, color: 'text.primary' }}>
+                                                                                                            📍 {project.project?.address || 'N/A'}
+                                                                                                        </Typography>
+                                                                                                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                                                                                            💵 ${parseFloat(project.paid_amount || 0).toFixed(2)}
+                                                                                                        </Typography>
+                                                                                                        {project.last_payment_date && (
+                                                                                                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                                                                                                🕒 {new Date(project.last_payment_date).toLocaleString('zh-CN')}
+                                                                                                            </Typography>
+                                                                                                        )}
+                                                                                                    </Box>
+                                                                                                ))}
+                                                                                            </Box>
+                                                                                        );
+                                                                                    })()}
+                                                                                </Box>
+                                                                                <Box sx={{ flex: 1, minWidth: 150 }}>
+                                                                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                                                                                        待支付
+                                                                                    </Typography>
+                                                                                    <Typography
+                                                                                        variant="h6"
+                                                                                        sx={{
+                                                                                            fontWeight: 600,
+                                                                                            color: totalUnpaid > 0 ? 'error.main' : 'success.main'
+                                                                                        }}
+                                                                                    >
+                                                                                        ${totalUnpaid.toFixed(2)}
+                                                                                    </Typography>
+                                                                                </Box>
+                                                                            </Box>
+                                                                        </>
+                                                                    );
+                                                                })()}
+                                                            </Box>
                                                         </Paper>
                                                     </Grid>
                                                     <Grid item xs={12}>
