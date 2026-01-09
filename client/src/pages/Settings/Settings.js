@@ -81,6 +81,13 @@ const Settings = () => {
     server_ip: '',
   });
 
+  // SMTP test state
+  const [smtpTest, setSmtpTest] = useState({
+    testEmail: '',
+    testing: false,
+    result: null,
+  });
+
   useEffect(() => {
     loadProfile();
     loadSystemSettings();
@@ -178,6 +185,32 @@ const Settings = () => {
       showSnackbar('Failed to update system settings', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Test SMTP configuration
+  const handleTestSMTP = async () => {
+    if (!smtpTest.testEmail) {
+      setSnackbar({ open: true, message: '请输入测试邮箱地址', severity: 'warning' });
+      return;
+    }
+
+    setSmtpTest({ ...smtpTest, testing: true, result: null });
+    try {
+      const response = await api.post('/settings/smtp/test', {
+        smtp_host: systemSettings.smtp_host,
+        smtp_port: systemSettings.smtp_port,
+        smtp_user: systemSettings.smtp_user,
+        smtp_password: systemSettings.smtp_password,
+        smtp_from: systemSettings.smtp_from_email,
+        test_email: smtpTest.testEmail,
+      });
+      setSmtpTest({ ...smtpTest, testing: false, result: { success: true, message: response.data.message } });
+      setSnackbar({ open: true, message: '✅ ' + response.data.message, severity: 'success' });
+    } catch (error) {
+      const errorMsg = error.response?.data?.error || error.message;
+      setSmtpTest({ ...smtpTest, testing: false, result: { success: false, message: errorMsg } });
+      setSnackbar({ open: true, message: '❌ ' + errorMsg, severity: 'error' });
     }
   };
 
@@ -457,6 +490,36 @@ const Settings = () => {
                 <strong>Gmail Users:</strong> Use an App Password instead of your regular password.
                 Go to Google Account → Security → 2-Step Verification → App passwords to generate one.
               </Alert>
+            </Grid>
+
+            <Grid item xs={12}>
+              <Divider sx={{ my: 2 }} />
+              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
+                测试 SMTP 配置
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+                <TextField
+                  fullWidth
+                  label="测试邮箱地址"
+                  value={smtpTest.testEmail}
+                  onChange={(e) => setSmtpTest({ ...smtpTest, testEmail: e.target.value })}
+                  placeholder="输入您的邮箱地址接收测试邮件"
+                  helperText="发送一封测试邮件以验证 SMTP 配置是否正确"
+                />
+                <Button
+                  variant="outlined"
+                  onClick={handleTestSMTP}
+                  disabled={smtpTest.testing || !systemSettings.smtp_host || !systemSettings.smtp_user}
+                  sx={{ mt: 0.5, minWidth: 120, height: 56 }}
+                >
+                  {smtpTest.testing ? '测试中...' : '测试发送'}
+                </Button>
+              </Box>
+              {smtpTest.result && (
+                <Alert severity={smtpTest.result.success ? 'success' : 'error'} sx={{ mt: 2 }}>
+                  {smtpTest.result.message}
+                </Alert>
+              )}
             </Grid>
 
             <Grid item xs={12}>

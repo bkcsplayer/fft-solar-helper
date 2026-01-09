@@ -59,7 +59,41 @@ exports.updateSettings = async (req, res) => {
     });
   } catch (error) {
     console.error('Update settings error:', error);
-    res.status(500).json({ error: 'Failed to update settings' });
+    res.status(500).json({ error: 'Failed to update settings' })
+  }
+};
+
+// Test SMTP configuration
+exports.testSMTP = async (req, res) => {
+  try {
+    const { smtp_host, smtp_port, smtp_user, smtp_password, smtp_from, test_email } = req.body;
+
+    if (!smtp_host || !smtp_port || !smtp_user || !smtp_password) {
+      return res.status(400).json({ error: 'Missing required SMTP configuration' });
+    }
+
+    if (!test_email) {
+      return res.status(400).json({ error: 'Please provide a test email address' });
+    }
+
+    const { testSMTPConnection } = require('../utils/testEmail');
+
+    const result = await testSMTPConnection({
+      host: smtp_host,
+      port: smtp_port,
+      user: smtp_user,
+      password: smtp_password,
+      from: smtp_from || smtp_user
+    }, test_email);
+
+    if (result.success) {
+      res.json({ success: true, message: result.message });
+    } else {
+      res.status(400).json({ success: false, error: result.error });
+    }
+  } catch (error) {
+    console.error('Test SMTP error:', error);
+    res.status(500).json({ error: 'Failed to test SMTP configuration' });
   }
 };
 

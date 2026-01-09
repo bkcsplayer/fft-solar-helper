@@ -38,13 +38,12 @@ const AssetForm = () => {
     const [success, setSuccess] = useState('');
 
     const [formData, setFormData] = useState({
-        asset_name: '',
+        name: '',
         asset_type: 'Equipment',
         purchase_date: '',
-        purchase_price: '',
-        current_value: '',
-        status: 'Active',
-        location: '',
+        purchase_cost: '',
+        status: 'available',
+        current_holder_id: null,
         notes: '',
     });
 
@@ -167,8 +166,8 @@ const AssetForm = () => {
                                     required
                                     fullWidth
                                     label="资产名称"
-                                    name="asset_name"
-                                    value={formData.asset_name}
+                                    name="name"
+                                    value={formData.name}
                                     onChange={handleChange}
                                     placeholder="例如: 太阳能板安装工具"
                                     sx={modernInputStyle}
@@ -209,27 +208,13 @@ const AssetForm = () => {
                             <Grid item xs={12} md={6}>
                                 <TextField
                                     fullWidth
-                                    label="购买价格 (¥)"
-                                    name="purchase_price"
+                                    label="购买成本 (¥)"
+                                    name="purchase_cost"
                                     type="number"
                                     inputProps={{ step: '0.01', min: '0' }}
-                                    value={formData.purchase_price}
+                                    value={formData.purchase_cost}
                                     onChange={handleChange}
-                                    helperText="购买时的价格"
-                                    sx={modernInputStyle}
-                                />
-                            </Grid>
-
-                            <Grid item xs={12} md={6}>
-                                <TextField
-                                    fullWidth
-                                    label="当前价值 (¥)"
-                                    name="current_value"
-                                    type="number"
-                                    inputProps={{ step: '0.01', min: '0' }}
-                                    value={formData.current_value}
-                                    onChange={handleChange}
-                                    helperText="估计的当前价值"
+                                    helperText="购买时的成本"
                                     sx={modernInputStyle}
                                 />
                             </Grid>
@@ -243,24 +228,11 @@ const AssetForm = () => {
                                         label="状态"
                                         onChange={handleChange}
                                     >
-                                        <MenuItem value="Active">使用中</MenuItem>
-                                        <MenuItem value="Maintenance">维修中</MenuItem>
-                                        <MenuItem value="Retired">已报废</MenuItem>
-                                        <MenuItem value="Storage">存储中</MenuItem>
+                                        <MenuItem value="available">可用</MenuItem>
+                                        <MenuItem value="in_use">使用中</MenuItem>
+                                        <MenuItem value="maintenance">维护中</MenuItem>
                                     </Select>
                                 </FormControl>
-                            </Grid>
-
-                            <Grid item xs={12}>
-                                <TextField
-                                    fullWidth
-                                    label="存放位置"
-                                    name="location"
-                                    value={formData.location}
-                                    onChange={handleChange}
-                                    placeholder="例如: 仓库A区"
-                                    sx={modernInputStyle}
-                                />
                             </Grid>
 
                             <Grid item xs={12}>

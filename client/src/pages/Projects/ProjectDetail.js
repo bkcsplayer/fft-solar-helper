@@ -248,15 +248,30 @@ const ProjectDetail = () => {
     setNotifySuccess('');
     try {
       const response = await api.post(`/projects/${id}/notify`);
-      setNotifySuccess(`成功发送 ${response.data.results.filter(r => r.success).length} 封通知邮件`);
+      const successCount = response.data.results.filter(r => r.success).length;
+      const totalCount = response.data.results.length;
+
+      if (successCount === 0) {
+        alert('邮件发送失败！请检查邮件服务器配置。');
+      } else if (successCount < totalCount) {
+        setNotifySuccess(`部分成功：${successCount}/${totalCount} 封邮件已发送`);
+      } else {
+        setNotifySuccess(`✅ 成功发送 ${successCount} 封通知邮件！`);
+      }
+
       await fetchProjectDetail();
-      setTimeout(() => setNotifySuccess(''), 3000);
+
+      // 6秒后自动清除成功提示
+      setTimeout(() => setNotifySuccess(''), 6000);
     } catch (error) {
-      alert('发送通知失败：' + (error.response?.data?.error || error.message));
+      const errorMsg = error.response?.data?.error || error.message || '未知错误';
+      alert(`❌ 发送通知失败：${errorMsg}`);
+      console.error('Notify staff error:', error);
     } finally {
       setNotifying(false);
     }
   };
+
 
   const handleOpenProgressDialog = (stage, currentStatus) => {
     setProgressDialog({ open: true, stage, currentStatus });

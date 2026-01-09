@@ -47,6 +47,7 @@ const ProjectForm = () => {
     panel_brand: '',
     panel_watt: '',
     panel_quantity: '',
+    installation_date: '',
     notes: '',
   });
 
@@ -78,6 +79,7 @@ const ProjectForm = () => {
         panel_brand: response.data.panel_brand || '',
         panel_watt: response.data.panel_watt || '',
         panel_quantity: response.data.panel_quantity || '',
+        installation_date: response.data.installation_date || '',
         notes: response.data.notes || '',
       });
     } catch (err) {
@@ -184,9 +186,9 @@ const ProjectForm = () => {
       </Box>
 
       {error && (
-        <Alert 
-          severity="error" 
-          sx={{ mb: 3, borderRadius: '12px' }} 
+        <Alert
+          severity="error"
+          sx={{ mb: 3, borderRadius: '12px' }}
           onClose={() => setError('')}
         >
           {error}
@@ -202,11 +204,11 @@ const ProjectForm = () => {
       <Card sx={modernCardStyle}>
         <CardContent sx={{ p: 4 }}>
           <Box component="form" onSubmit={handleSubmit}>
-            <Typography 
-              variant="h6" 
+            <Typography
+              variant="h6"
               gutterBottom
-              sx={{ 
-                fontWeight: 700, 
+              sx={{
+                fontWeight: 700,
                 color: '#1e293b',
                 mb: 2
               }}
@@ -275,15 +277,29 @@ const ProjectForm = () => {
                 />
               </Grid>
 
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="安装日期"
+                  name="installation_date"
+                  type="date"
+                  value={formData.installation_date}
+                  onChange={handleChange}
+                  InputLabelProps={{ shrink: true }}
+                  helperText="预计安装日期"
+                  sx={modernInputStyle}
+                />
+              </Grid>
+
               <Grid item xs={12}>
                 <Divider sx={{ borderColor: '#e2e8f0' }} />
               </Grid>
 
               <Grid item xs={12}>
-                <Typography 
+                <Typography
                   variant="h6"
-                  sx={{ 
-                    fontWeight: 700, 
+                  sx={{
+                    fontWeight: 700,
                     color: '#1e293b',
                   }}
                 >
@@ -334,9 +350,9 @@ const ProjectForm = () => {
 
               {formData.panel_watt && formData.panel_quantity && (
                 <Grid item xs={12}>
-                  <Alert 
+                  <Alert
                     severity="info"
-                    sx={{ 
+                    sx={{
                       borderRadius: '12px',
                       background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
                       border: 'none',
@@ -397,10 +413,10 @@ const ProjectForm = () => {
       </Card>
 
       {!isEdit && (
-        <Alert 
-          severity="info" 
-          sx={{ 
-            mt: 3, 
+        <Alert
+          severity="info"
+          sx={{
+            mt: 3,
             borderRadius: '12px',
             background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
             border: 'none',

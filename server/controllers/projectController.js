@@ -10,6 +10,7 @@ const {
 } = require('../models');
 const { Op } = require('sequelize');
 const { sendProjectAssignmentEmail } = require('../utils/emailService');
+const telegram = require('../services/telegramService');
 const path = require('path');
 const fs = require('fs');
 
@@ -104,6 +105,11 @@ exports.createProject = async (req, res) => {
         { model: ProjectProgress, as: 'progress' }
       ]
     });
+
+    // Send Telegram notification
+    telegram.notifyProjectCreated(completeProject).catch(err =>
+      console.error('Telegram notification failed:', err)
+    );
 
     res.status(201).json(completeProject);
   } catch (error) {
@@ -304,6 +310,11 @@ exports.assignStaff = async (req, res) => {
       include: [{ model: Staff, as: 'staff' }]
     });
 
+    // Send Telegram notification
+    telegram.notifyStaffAssigned(project, staff, role_in_project).catch(err =>
+      console.error('Telegram notification failed:', err)
+    );
+
     res.status(201).json(assignmentWithStaff);
   } catch (error) {
     await t.rollback();
@@ -348,7 +359,8 @@ exports.notifyStaff = async (req, res) => {
     const results = [];
 
     for (const assignment of project.assignments) {
-      if (assignment.staff.email && !assignment.is_notified) {
+      // 移除 is_notified 检查，允许重复发送
+      if (assignment.staff.email) {
         const emailResult = await sendProjectAssignmentEmail(
           assignment.staff.email,
           assignment.staff.name,
@@ -439,6 +451,14 @@ exports.updateProgress = async (req, res) => {
       await Project.update(
         { status: 'completed' },
         { where: { id: projectId } }
+      );
+    }
+
+    // Send Telegram notification
+    const projectData = await Project.findByPk(projectId);
+    if (projectData && is_completed) {
+      telegram.notifyProgressUpdate(projectData, stage, is_completed).catch(err =>
+        console.error('Telegram notification failed:', err)
       );
     }
 

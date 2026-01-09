@@ -14,4 +14,8 @@ router.put('/system', settingsController.updateSettings);
 router.get('/profile', settingsController.getAdminProfile);
 router.put('/profile', settingsController.updateAdminProfile);
 
+// SMTP test route
+router.post('/smtp/test', settingsController.testSMTP);
+
 module.exports = router;
+
