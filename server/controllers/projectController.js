@@ -5,7 +5,9 @@ const {
   ProjectAssignment,
   ProjectProgress,
   ProjectFile,
+  ProjectLog,
   Staff,
+  User,
   sequelize
 } = require('../models');
 const { Op } = require('sequelize');
@@ -95,13 +97,25 @@ exports.createProject = async (req, res) => {
     }
 
     // Create 4 progress stages
-    const stages = ['roof_base', 'electrical', 'roof_install', 'bird_net'];
+    let stages = ['roof_base', 'electrical', 'roof_install', 'bird_net'];
+    if (projectData.project_type === 'insurance') {
+      stages = ['removal', ...stages];
+    }
+
     const progressData = stages.map(stage => ({
       project_id: project.id,
       stage,
       is_completed: false
     }));
     await ProjectProgress.bulkCreate(progressData, { transaction: t });
+
+    // Initial log
+    await ProjectLog.create({
+      project_id: project.id,
+      content: `Project created as ${projectData.project_type || 'standard'} type`,
+      log_type: 'system',
+      created_by: req.user ? req.user.id : null
+    }, { transaction: t });
 
     await t.commit();
 

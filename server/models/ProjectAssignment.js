@@ -30,6 +30,13 @@ const ProjectAssignment = sequelize.define('ProjectAssignment', {
       isIn: [['leader', 'installer', 'electrician']]
     }
   },
+  phase: {
+    type: DataTypes.STRING(20),
+    defaultValue: 'standard',
+    validate: {
+      isIn: [['standard', 'removal', 'installation']]
+    }
+  },
   calculated_pay: {
     type: DataTypes.DECIMAL(10, 2)
   },

@@ -17,9 +17,39 @@ const RecurringExpense = require('./RecurringExpense');
 const SystemSetting = require('./SystemSetting');
 const SystemSettings = require('./SystemSettings');
 
-// Define Relationships
+const ProjectLog = require('./ProjectLog');
 
-// Client -> Projects
+// ... existing code ...
+
+// Project -> Logs
+Project.hasMany(ProjectLog, { foreignKey: 'project_id', as: 'logs', onDelete: 'CASCADE' });
+ProjectLog.belongsTo(Project, { foreignKey: 'project_id', as: 'project' });
+
+// User -> Logs (created_by)
+User.hasMany(ProjectLog, { foreignKey: 'created_by', as: 'created_logs' });
+ProjectLog.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
+
+module.exports = {
+  sequelize,
+  User,
+  Client,
+  Staff,
+  Project,
+  ProjectInverter,
+  ProjectAssignment,
+  ProjectProgress,
+  ProjectFile,
+  Vehicle,
+  VehicleUsage,
+  VehicleMaintenance,
+  VehicleMaintenanceLog,
+  Asset,
+  FinanceRecord,
+  RecurringExpense,
+  SystemSetting,
+  SystemSettings,
+  ProjectLog
+};
 Client.hasMany(Project, { foreignKey: 'client_id', as: 'projects' });
 Project.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
 
