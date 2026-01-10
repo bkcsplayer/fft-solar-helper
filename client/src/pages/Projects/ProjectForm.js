@@ -48,6 +48,8 @@ const ProjectForm = () => {
     panel_watt: '',
     panel_quantity: '',
     installation_date: '',
+    removal_date: '',
+    project_type: 'standard',
     notes: '',
   });
 
@@ -80,6 +82,8 @@ const ProjectForm = () => {
         panel_watt: response.data.panel_watt || '',
         panel_quantity: response.data.panel_quantity || '',
         installation_date: response.data.installation_date || '',
+        removal_date: response.data.removal_date || '',
+        project_type: response.data.project_type || 'standard',
         notes: response.data.notes || '',
       });
     } catch (err) {
@@ -284,15 +288,47 @@ const ProjectForm = () => {
               </Grid>
 
               <Grid item xs={12} md={6}>
+                <FormControl fullWidth sx={modernInputStyle}>
+                  <InputLabel>项目类型</InputLabel>
+                  <Select
+                    name="project_type"
+                    value={formData.project_type}
+                    label="项目类型"
+                    onChange={handleChange}
+                    disabled={isEdit} // Prevent changing type after creation to avoid progress inconsistencies
+                  >
+                    <MenuItem value="standard">标准安装 (Standard)</MenuItem>
+                    <MenuItem value="insurance">保险理赔 (Insurance/Removal)</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {formData.project_type === 'insurance' && (
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="拆除日期"
+                    name="removal_date"
+                    type="date"
+                    value={formData.removal_date}
+                    onChange={handleChange}
+                    InputLabelProps={{ shrink: true }}
+                    helperText="预计拆除日期"
+                    sx={modernInputStyle}
+                  />
+                </Grid>
+              )}
+
+              <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
-                  label="安装日期"
+                  label={formData.project_type === 'insurance' ? "重装日期" : "安装日期"}
                   name="installation_date"
                   type="date"
                   value={formData.installation_date}
                   onChange={handleChange}
                   InputLabelProps={{ shrink: true }}
-                  helperText="预计安装日期"
+                  helperText={formData.project_type === 'insurance' ? "预计重新安装日期" : "预计安装日期"}
                   sx={modernInputStyle}
                 />
               </Grid>
