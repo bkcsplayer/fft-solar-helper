@@ -55,8 +55,16 @@ exports.getProjects = async (req, res) => {
       const project = p.toJSON();
       const totalWatt = project.panel_watt * project.panel_quantity;
       project.total_watt = totalWatt;
-      project.project_revenue = project.client ?
-        (totalWatt * parseFloat(project.client.rate_per_watt)).toFixed(2) : 0;
+
+      if (project.client) {
+        if (project.client.price_model === 'per_panel') {
+          project.project_revenue = (project.panel_quantity * parseFloat(project.client.rate_per_panel || 0)).toFixed(2);
+        } else {
+          project.project_revenue = (totalWatt * parseFloat(project.client.rate_per_watt || 0)).toFixed(2);
+        }
+      } else {
+        project.project_revenue = 0;
+      }
       return project;
     });
 
@@ -146,7 +154,11 @@ exports.getProjectById = async (req, res) => {
     projectData.total_watt = totalWatt;
 
     if (projectData.client) {
-      projectData.project_revenue = (totalWatt * parseFloat(projectData.client.rate_per_watt)).toFixed(2);
+      if (projectData.client.price_model === 'per_panel') {
+        projectData.project_revenue = (projectData.panel_quantity * parseFloat(projectData.client.rate_per_panel || 0)).toFixed(2);
+      } else {
+        projectData.project_revenue = (totalWatt * parseFloat(projectData.client.rate_per_watt || 0)).toFixed(2);
+      }
     }
 
     const totalExpense = projectData.assignments.reduce(
