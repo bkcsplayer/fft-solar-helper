@@ -2,7 +2,7 @@
 
 > 🌞 A comprehensive CRM management system for solar installation companies
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)
 
@@ -30,6 +30,14 @@ FFT Solar CRM is a full-stack customer relationship management (CRM) system spec
 - **Progress Tracking** - Visual construction phase monitoring
 - **Export Capabilities** - PDF and Excel export for reports
 
+### 📧 Email & Notifications (v2.1 New)
+- **Beautiful HTML Emails** - Professional, card-style email templates
+- **Smart Wage Slips** - Automated staff timesheet emails with:
+  - 💰 **Salary Summary** - Dashboard-style cards for Expected, Paid, and Unpaid amounts
+  - 📋 **Project Cards** - Detailed project info including panel counts and wattages
+  - ⚡ **Payment Status** - Clear indicators for paid vs unpaid items
+- **Vehicle Reports** - Automated maintenance summaries for fleet management
+
 ## 🖼️ Screenshots
 
 ### Dashboard Overview
@@ -40,9 +48,8 @@ FFT Solar CRM is a full-stack customer relationship management (CRM) system spec
 ![Projects List](screenshots/projects-list.png)
 *Comprehensive project list with filtering and quick actions*
 
-### Project Details
-![Project Detail](screenshots/project-detail.png)
-*Detailed project information with tabs for different aspects*
+### Staff Detail & Timesheet (v2.1)
+*Enhanced UI with statistics cards and detailed payment breakdown*
 
 ### Photo Gallery
 ![Photo Carousel](screenshots/photo-carousel.png)
@@ -56,6 +63,7 @@ FFT Solar CRM is a full-stack customer relationship management (CRM) system spec
 - **Sequelize** - ORM for database operations
 - **JWT** - Secure authentication
 - **Multer** - File upload handling
+- **Nodemailer** - Email service
 
 ### Frontend
 - **React** - Modern UI framework
@@ -117,6 +125,7 @@ fft-solar-crm/
 │   ├── models/           # Database models (Sequelize)
 │   ├── routes/           # API endpoints
 │   ├── middleware/       # Auth & validation
+│   ├── utils/            # Helper functions (Email, etc.)
 │   └── index.js          # Server entry point
 ├── database/             # Database initialization
 │   └── schema.sql        # Database schema
@@ -142,6 +151,10 @@ fft-solar-crm/
 - `GET /api/clients` - List all clients
 - `GET /api/clients/:id` - Get client details
 - `POST /api/clients` - Create new client
+
+### Staff & Timesheets
+- `GET /api/staff` - List all staff
+- `POST /api/staff/:id/timesheet` - Send timesheet email (Enhanced in v2.1)
 
 ### Files
 - `POST /api/files/upload` - Upload project files
@@ -178,6 +191,13 @@ JWT_EXPIRES_IN=7d
 PORT=5200
 NODE_ENV=production
 
+# Email Configuration (Optional but recommended for v2.1+)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASSWORD=your_app_password
+EMAIL_FROM=FFT Solar CRM <no-reply@fftsolar.com>
+
 # File Upload
 UPLOAD_DIR=./uploads
 MAX_FILE_SIZE=10485760
@@ -203,6 +223,12 @@ This starts:
 
 ## 🎨 Features Highlights
 
+### Enhanced Staff UI & Emails (v2.1)
+The latest update brings a massive overhaul to the staff management interface:
+- **Statistics Cards**: Immediate view of total expected pay vs actual paid
+- **Smart Timesheet Calculator**: Automatically calculates pay using per-panel rates
+- **Beautiful HTML Emails**: Employees receive professional, card-style wage slips directly to their inbox, optimized for all devices
+
 ### Optimized Image Carousel
 Recent v1.0 includes a beautifully redesigned photo carousel:
 - Small, elegant 60px × 60px thumbnails
@@ -224,6 +250,13 @@ Automatic calculation of:
 - Nginx-optimized static file serving
 
 ## 📝 Version History
+
+### v2.1.0 (2026-01-09)
+- ✨ **Enhanced Staff UI**: Added statistics cards and beautified project history table
+- 📧 **Advanced Email System**: Completely rewritten email service with beautiful HTML templates
+- 💰 **Pay Tracking**: Added "Paid" vs "Unpaid" status tracking in timesheets
+- 🐛 **Bug Fixes**: Resolved email sending errors and salary calculation display issues
+- 🔄 **Nginx Update**: Improved cache control for frontend assets
 
 ### v1.0.0 (2026-01-08)
 - ✅ Complete CRM functionality for solar installations
