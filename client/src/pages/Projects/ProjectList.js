@@ -209,7 +209,7 @@ const ProjectList = () => {
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2" color="text.secondary">
-                      {project.installation_date ? new Date(project.installation_date).toLocaleDateString() : '-'}
+                      {project.installation_date ? new Date(project.installation_date + 'T00:00:00').toLocaleDateString() : '-'}
                     </Typography>
                   </TableCell>
                   <TableCell>

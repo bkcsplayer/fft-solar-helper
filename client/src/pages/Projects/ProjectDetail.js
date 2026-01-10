@@ -575,6 +575,12 @@ const ProjectDetail = () => {
                       <TableCell sx={{ fontWeight: 600, color: '#64748b' }}>客户电话</TableCell>
                       <TableCell sx={{ color: '#3b82f6' }}>{project.customer_phone || '-'}</TableCell>
                     </TableRow>
+                    <TableRow sx={{ '& td': { borderBottom: '1px solid #e2e8f0', py: 1.5 } }}>
+                      <TableCell sx={{ fontWeight: 600, color: '#64748b' }}>安装日期</TableCell>
+                      <TableCell sx={{ color: '#1e293b', fontWeight: 600 }}>
+                        {project.installation_date ? new Date(project.installation_date + 'T00:00:00').toLocaleDateString() : '-'}
+                      </TableCell>
+                    </TableRow>
                     <TableRow sx={{ '& td': { borderBottom: 'none', py: 1.5 } }}>
                       <TableCell sx={{ fontWeight: 600, color: '#64748b' }}>创建时间</TableCell>
                       <TableCell sx={{ color: '#1e293b' }}>
