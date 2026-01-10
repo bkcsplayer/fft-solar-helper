@@ -296,7 +296,8 @@ exports.assignStaff = async (req, res) => {
       project_id: project.id,
       staff_id: staff.id,
       role_in_project,
-      calculated_pay
+      calculated_pay,
+      paid_amount: calculated_pay // Default paid amount to actual pay
     }, { transaction: t });
 
     // Update project status to in_progress if it was pending
