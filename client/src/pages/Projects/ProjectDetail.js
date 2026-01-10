@@ -485,6 +485,7 @@ if (!project) {
 }
 
 const stageNames = {
+  removal: '拆除作业',
   roof_base: '屋顶底座',
   electrical: '电力部分',
   roof_install: '屋顶安装',
@@ -877,6 +878,7 @@ return (
                 <TableRow sx={{ '& th': { fontWeight: 700, color: '#64748b', borderBottom: '2px solid #e2e8f0' } }}>
                   <TableCell>姓名</TableCell>
                   <TableCell>角色</TableCell>
+                  <TableCell>阶段</TableCell>
                   <TableCell>电话</TableCell>
                   <TableCell>Email</TableCell>
                   <TableCell align="right">实发薪资</TableCell>
@@ -907,6 +909,16 @@ return (
                           }
                           size="small"
                           sx={getModernChipStyle(assignment.role_in_project === 'leader' ? 'primary' : 'default')}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={
+                            assignment.phase === 'removal' ? '拆除' :
+                              assignment.phase === 'installation' ? '安装' : '标准'
+                          }
+                          size="small"
+                          sx={getModernChipStyle('default')}
                         />
                       </TableCell>
                       <TableCell sx={{ color: '#3b82f6' }}>{assignment.staff?.phone}</TableCell>

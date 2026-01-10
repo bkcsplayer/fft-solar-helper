@@ -201,11 +201,25 @@ const ProjectList = () => {
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    <Chip
-                      label={statusNames[project.status]}
-                      size="small"
-                      sx={getModernChipStyle(statusVariants[project.status])}
-                    />
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      {project.project_type === 'insurance' && (
+                        <Chip
+                          label="保险"
+                          size="small"
+                          sx={{
+                            background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                            color: 'white',
+                            fontWeight: 600,
+                            fontSize: '0.75rem',
+                          }}
+                        />
+                      )}
+                      <Chip
+                        label={statusNames[project.status]}
+                        size="small"
+                        sx={getModernChipStyle(statusVariants[project.status])}
+                      />
+                    </Box>
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2" color="text.secondary">
