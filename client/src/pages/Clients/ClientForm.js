@@ -39,6 +39,8 @@ const ClientForm = () => {
     phone: '',
     email: '',
     rate_per_watt: '',
+    rate_per_panel: '',
+    price_model: 'per_watt',
     address: '',
     notes: '',
     is_active: true,
@@ -139,9 +141,9 @@ const ClientForm = () => {
       </Box>
 
       {error && (
-        <Alert 
-          severity="error" 
-          sx={{ mb: 3, borderRadius: '12px' }} 
+        <Alert
+          severity="error"
+          sx={{ mb: 3, borderRadius: '12px' }}
           onClose={() => setError('')}
         >
           {error}
@@ -205,18 +207,48 @@ const ClientForm = () => {
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <TextField
-                  required
-                  fullWidth
-                  label="Rate ($/W)"
-                  name="rate_per_watt"
-                  type="number"
-                  inputProps={{ step: '0.0001', min: '0' }}
-                  value={formData.rate_per_watt}
-                  onChange={handleChange}
-                  helperText="Price per watt, e.g., 0.50"
-                  sx={modernInputStyle}
-                />
+                <FormControl fullWidth sx={modernInputStyle}>
+                  <InputLabel>Pricing Model</InputLabel>
+                  <Select
+                    name="price_model"
+                    value={formData.price_model || 'per_watt'}
+                    label="Pricing Model"
+                    onChange={handleChange}
+                  >
+                    <MenuItem value="per_watt">Per Watt ($/W)</MenuItem>
+                    <MenuItem value="per_panel">Per Panel ($/Panel)</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                {formData.price_model === 'per_panel' ? (
+                  <TextField
+                    required
+                    fullWidth
+                    label="Rate ($/Panel)"
+                    name="rate_per_panel"
+                    type="number"
+                    inputProps={{ step: '0.01', min: '0' }}
+                    value={formData.rate_per_panel || ''}
+                    onChange={handleChange}
+                    helperText="Price per panel, e.g., 50.00"
+                    sx={modernInputStyle}
+                  />
+                ) : (
+                  <TextField
+                    required
+                    fullWidth
+                    label="Rate ($/W)"
+                    name="rate_per_watt"
+                    type="number"
+                    inputProps={{ step: '0.0001', min: '0' }}
+                    value={formData.rate_per_watt || ''}
+                    onChange={handleChange}
+                    helperText="Price per watt, e.g., 0.50"
+                    sx={modernInputStyle}
+                  />
+                )}
               </Grid>
 
               <Grid item xs={12}>
