@@ -1649,6 +1649,104 @@ return (
       </Grid>
     )}
 
+    {/* Tab 6: 项目日志 */}
+    {activeTab === 6 && (
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={8}>
+          <Card sx={modernCardStyle}>
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, color: '#1e293b' }}>
+                项目日志
+              </Typography>
+              <Divider sx={{ mb: 3, borderColor: '#e2e8f0' }} />
+
+              <Box sx={{ mb: 4, display: 'flex', gap: 2 }}>
+                <TextField
+                  fullWidth
+                  placeholder="添加备注..."
+                  value={newLog}
+                  onChange={(e) => setNewLog(e.target.value)}
+                  multiline
+                  rows={2}
+                  sx={modernInputStyle}
+                />
+                <Button
+                  variant="contained"
+                  onClick={handleAddLog}
+                  disabled={submittingLog || !newLog.trim()}
+                  sx={{ ...modernButtonStyle, px: 4, height: 'auto' }}
+                >
+                  发布
+                </Button>
+              </Box>
+
+              <Box sx={{ position: 'relative' }}>
+                {/* Timeline line */}
+                <Box sx={{
+                  position: 'absolute',
+                  left: '16px',
+                  top: 0,
+                  bottom: 0,
+                  width: '2px',
+                  bgcolor: '#e2e8f0',
+                  zIndex: 0
+                }} />
+
+                {logs.map((log) => (
+                  <Box key={log.id} sx={{ display: 'flex', mb: 4, position: 'relative', zIndex: 1 }}>
+                    <Box sx={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      bgcolor: log.log_type === 'system' ? '#f1f5f9' : '#dbeafe',
+                      border: `2px solid ${log.log_type === 'system' ? '#94a3b8' : '#3b82f6'}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      mr: 3,
+                      flexShrink: 0,
+                      bgcolor: 'white' // Cover the line
+                    }}>
+                      {log.log_type === 'system' ?
+                        <Construction sx={{ fontSize: 16, color: '#64748b' }} /> :
+                        <Edit sx={{ fontSize: 16, color: '#3b82f6' }} />
+                      }
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#1e293b' }}>
+                          {log.creator ? log.creator.name : 'System'}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                          {new Date(log.created_at).toLocaleString()}
+                        </Typography>
+                      </Box>
+                      <Box sx={{
+                        p: 2,
+                        bgcolor: '#f8fafc',
+                        borderRadius: '12px',
+                        border: '1px solid #e2e8f0'
+                      }}>
+                        <Typography variant="body2" sx={{ color: '#334155', whiteSpace: 'pre-wrap' }}>
+                          {log.content}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                ))}
+
+                {logs.length === 0 && (
+                  <Typography color="text.secondary" sx={{ py: 3, textAlign: 'center', ml: 4 }}>
+                    暂无日志
+                  </Typography>
+                )}
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    )}
+
     {/* 添加人员对话框 */}
     <Dialog
       open={assignDialogOpen}
