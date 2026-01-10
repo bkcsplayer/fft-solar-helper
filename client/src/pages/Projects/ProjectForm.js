@@ -137,9 +137,15 @@ const ProjectForm = () => {
 
   const calculateRevenue = () => {
     const totalWatt = calculateTotalWatt();
+    const panelQuantity = parseInt(formData.panel_quantity) || 0;
     const client = clients.find(c => c.id === formData.client_id);
-    if (client && totalWatt > 0) {
-      return (totalWatt * parseFloat(client.rate_per_watt)).toFixed(2);
+
+    if (client) {
+      if (client.price_model === 'per_panel' && panelQuantity > 0) {
+        return (panelQuantity * parseFloat(client.rate_per_panel || 0)).toFixed(2);
+      } else if (totalWatt > 0) {
+        return (totalWatt * parseFloat(client.rate_per_watt || 0)).toFixed(2);
+      }
     }
     return '0.00';
   };
