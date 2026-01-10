@@ -11,6 +11,9 @@ const Project = sequelize.define('Project', {
     type: DataTypes.STRING(500),
     allowNull: false
   },
+  installation_date: {
+    type: DataTypes.DATEONLY
+  },
   client_id: {
     type: DataTypes.INTEGER,
     references: {

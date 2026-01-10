@@ -143,6 +143,7 @@ const ProjectList = () => {
               <TableCell>Total Watt</TableCell>
               <TableCell>Est. Revenue</TableCell>
               <TableCell>Status</TableCell>
+              <TableCell>Install Date</TableCell>
               <TableCell>Created</TableCell>
               <TableCell align="center">Actions</TableCell>
             </TableRow>
@@ -150,13 +151,13 @@ const ProjectList = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
+                <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
                   <Typography color="text.secondary">Loading...</Typography>
                 </TableCell>
               </TableRow>
             ) : projects.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
+                <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
                   <Typography color="text.secondary">No projects found</Typography>
                 </TableCell>
               </TableRow>
@@ -205,6 +206,11 @@ const ProjectList = () => {
                       size="small"
                       sx={getModernChipStyle(statusVariants[project.status])}
                     />
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" color="text.secondary">
+                      {project.installation_date ? new Date(project.installation_date).toLocaleDateString() : '-'}
+                    </Typography>
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2" color="text.secondary">
