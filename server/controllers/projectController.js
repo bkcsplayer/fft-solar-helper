@@ -298,7 +298,7 @@ exports.assignStaff = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
-    const { staff_id, role_in_project } = req.body;
+    const { staff_id, role_in_project, phase } = req.body;
 
     // Get project and staff
     const project = await Project.findByPk(req.params.id);
@@ -322,6 +322,7 @@ exports.assignStaff = async (req, res) => {
       project_id: project.id,
       staff_id: staff.id,
       role_in_project,
+      phase: phase || 'standard',
       calculated_pay,
       paid_amount: calculated_pay // Default paid amount to actual pay
     }, { transaction: t });
@@ -696,5 +697,53 @@ exports.deleteFile = async (req, res) => {
   } catch (error) {
     console.error('Delete file error:', error);
     res.status(500).json({ error: 'Failed to delete file' });
+  }
+};
+
+// Create log
+exports.createLog = async (req, res) => {
+  try {
+    const { content, log_type } = req.body;
+    const project_id = req.params.id;
+
+    const log = await ProjectLog.create({
+      project_id,
+      content,
+      log_type: log_type || 'note',
+      created_by: req.user.id
+    });
+
+    const completeLog = await ProjectLog.findByPk(log.id, {
+      include: [{ model: User, as: 'creator', attributes: ['name'] }]
+    });
+
+    res.status(201).json(completeLog);
+  } catch (error) {
+    console.error('Create log error:', error);
+    res.status(500).json({ error: 'Failed to create log' });
+  }
+};
+
+// Create log
+exports.createLog = async (req, res) => {
+  try {
+    const { content, log_type } = req.body;
+    const project_id = req.params.id;
+
+    const log = await ProjectLog.create({
+      project_id,
+      content,
+      log_type: log_type || 'note',
+      created_by: req.user.id
+    });
+
+    const completeLog = await ProjectLog.findByPk(log.id, {
+      include: [{ model: User, as: 'creator', attributes: ['name'] }]
+    });
+
+    res.status(201).json(completeLog);
+  } catch (error) {
+    console.error('Create log error:', error);
+    res.status(500).json({ error: 'Failed to create log' });
   }
 };
