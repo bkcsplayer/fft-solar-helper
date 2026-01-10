@@ -22,7 +22,18 @@ const Client = sequelize.define('Client', {
   },
   rate_per_watt: {
     type: DataTypes.DECIMAL(10, 4),
-    allowNull: false
+    allowNull: true
+  },
+  rate_per_panel: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true
+  },
+  price_model: {
+    type: DataTypes.STRING(20),
+    defaultValue: 'per_watt',
+    validate: {
+      isIn: [['per_watt', 'per_panel']]
+    }
   },
   address: {
     type: DataTypes.TEXT
