@@ -76,6 +76,7 @@ const ProjectDetail = () => {
   const [staffList, setStaffList] = useState([]);
   const [selectedStaff, setSelectedStaff] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
+  const [selectedPhase, setSelectedPhase] = useState('standard');
   const [assigning, setAssigning] = useState(false);
 
   // Notification
@@ -208,12 +209,14 @@ const ProjectDetail = () => {
     setAssignDialogOpen(true);
     setSelectedStaff('');
     setSelectedRole('');
+    setSelectedPhase('standard');
   };
 
   const handleCloseAssignDialog = () => {
     setAssignDialogOpen(false);
     setSelectedStaff('');
     setSelectedRole('');
+    setSelectedPhase('standard');
   };
 
   const handleAssignStaff = async () => {
@@ -223,7 +226,8 @@ const ProjectDetail = () => {
     try {
       await api.post(`/projects/${id}/assignments`, {
         staff_id: selectedStaff,
-        role_in_project: selectedRole
+        role_in_project: selectedRole,
+        phase: selectedPhase
       });
       await fetchProjectDetail();
       handleCloseAssignDialog();
@@ -498,6 +502,17 @@ const ProjectDetail = () => {
           </Box>
         </Box>
         <Box display="flex" gap={2} alignItems="center">
+          {project.project_type === 'insurance' && (
+            <Chip
+              label="保险理赔"
+              sx={{
+                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                color: 'white',
+                fontWeight: 600,
+                borderRadius: '8px',
+              }}
+            />
+          )}
           <Chip
             label={statusNames[project.status]}
             sx={getModernChipStyle(statusVariants[project.status])}
@@ -540,6 +555,7 @@ const ProjectDetail = () => {
           <Tab label="施工进度" />
           <Tab label="财务明细" />
           <Tab label="文档和照片" />
+          <Tab label="项目日志" />
         </Tabs>
       </Card>
 
