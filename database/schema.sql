@@ -16,6 +16,7 @@ DROP TABLE IF EXISTS clients CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
 -- 1. Users Table - Admin Login
+-- 1. Users Table - Admin Login
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
@@ -27,14 +28,16 @@ CREATE TABLE users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2. Clients Table - 甲方公司
+-- 2. Clients Table - 甲方公司 (Updated v2.3)
 CREATE TABLE clients (
     id SERIAL PRIMARY KEY,
     company_name VARCHAR(200) NOT NULL,
     contact_person VARCHAR(100),
     phone VARCHAR(50),
     email VARCHAR(100),
-    rate_per_watt DECIMAL(10, 4) NOT NULL,
+    price_model VARCHAR(20) DEFAULT 'per_watt' CHECK (price_model IN ('per_watt', 'per_panel')),
+    rate_per_watt DECIMAL(10, 4),
+    rate_per_panel DECIMAL(10, 2),
     address TEXT,
     notes TEXT,
     is_active BOOLEAN DEFAULT true,
@@ -56,7 +59,7 @@ CREATE TABLE staff (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4. Projects Table - 项目
+-- 4. Projects Table - 项目 (Updated v2.3)
 CREATE TABLE projects (
     id SERIAL PRIMARY KEY,
     address VARCHAR(500) NOT NULL,
@@ -70,13 +73,14 @@ CREATE TABLE projects (
     panel_quantity INTEGER,
     total_watt INTEGER GENERATED ALWAYS AS (panel_watt * panel_quantity) STORED,
 
-    -- Files
-    siteplan_file VARCHAR(500),
-    bom_file VARCHAR(500),
-
-    -- Status
+    -- Status & Dates
     status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed')),
+    installation_date DATE,
+    completion_date DATE,
 
+    -- Financial
+    project_revenue DECIMAL(10, 2),
+    
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -101,6 +105,9 @@ CREATE TABLE project_assignments (
     staff_id INTEGER REFERENCES staff(id),
     role_in_project VARCHAR(20) NOT NULL CHECK (role_in_project IN ('leader', 'installer', 'electrician')),
     calculated_pay DECIMAL(10, 2),
+    manual_pay DECIMAL(10, 2),
+    is_paid BOOLEAN DEFAULT false,
+    paid_at TIMESTAMP,
     is_notified BOOLEAN DEFAULT false,
     assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -109,14 +116,31 @@ CREATE TABLE project_assignments (
 CREATE TABLE project_progress (
     id SERIAL PRIMARY KEY,
     project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
-    stage VARCHAR(30) NOT NULL CHECK (stage IN ('roof_base', 'electrical', 'roof_install', 'bird_net')),
+    stage VARCHAR(30) NOT NULL CHECK (stage IN ('removal', 'roof_base', 'electrical', 'roof_install', 'bird_net')),
     is_completed BOOLEAN DEFAULT false,
     completed_at TIMESTAMP,
     completed_by INTEGER REFERENCES users(id),
+    inspection_status VARCHAR(30) DEFAULT 'waiting' CHECK (inspection_status IN ('waiting', 'pass', 'fail')),
+    inspection_date DATE,
+    inspection_fail_reason TEXT,
+    inspection_notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 8. Vehicles Table - 车辆
+-- 8. Project Files Table (New v2.0)
+CREATE TABLE project_files (
+    id SERIAL PRIMARY KEY,
+    project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+    file_name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    file_type VARCHAR(50),
+    file_size INTEGER,
+    category VARCHAR(50) DEFAULT 'document',
+    uploaded_by INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 9. Vehicles Table - 车辆 (Updated)
 CREATE TABLE vehicles (
     id SERIAL PRIMARY KEY,
     plate_number VARCHAR(20) UNIQUE NOT NULL,
@@ -128,7 +152,7 @@ CREATE TABLE vehicles (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 9. Vehicle Usage Table - 车辆使用记录
+-- 10. Vehicle Usage Table - 车辆使用记录
 CREATE TABLE vehicle_usage (
     id SERIAL PRIMARY KEY,
     vehicle_id INTEGER REFERENCES vehicles(id) ON DELETE CASCADE,
@@ -142,7 +166,7 @@ CREATE TABLE vehicle_usage (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 10. Vehicle Maintenance Table - 车辆维护记录
+-- 11. Vehicle Maintenance Table - 车辆维护记录
 CREATE TABLE vehicle_maintenance (
     id SERIAL PRIMARY KEY,
     vehicle_id INTEGER REFERENCES vehicles(id) ON DELETE CASCADE,
@@ -153,7 +177,17 @@ CREATE TABLE vehicle_maintenance (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 11. Assets Table - 资产设备
+-- 12. Vehicle Maintenance Logs (New v2.0)
+CREATE TABLE vehicle_maintenance_logs (
+    id SERIAL PRIMARY KEY,
+    vehicle_id INTEGER REFERENCES vehicles(id) ON DELETE CASCADE,
+    log_date DATE NOT NULL,
+    description TEXT,
+    cost DECIMAL(10, 2),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 13. Assets Table - 资产设备
 CREATE TABLE assets (
     id SERIAL PRIMARY KEY,
     name VARCHAR(200) NOT NULL,
@@ -167,7 +201,23 @@ CREATE TABLE assets (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 12. Finance Records Table - 财务记录
+-- 14. Recurring Expenses Table (New v2.2)
+CREATE TABLE recurring_expenses (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    category VARCHAR(50) NOT NULL,
+    frequency VARCHAR(20) NOT NULL CHECK (frequency IN ('monthly', 'yearly', 'weekly')),
+    start_date DATE NOT NULL,
+    next_due_date DATE,
+    is_active BOOLEAN DEFAULT true,
+    description TEXT,
+    created_by INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 15. Finance Records Table - 财务记录 (Updated v2.2)
 CREATE TABLE finance_records (
     id SERIAL PRIMARY KEY,
     record_date DATE NOT NULL,
@@ -176,30 +226,39 @@ CREATE TABLE finance_records (
     amount DECIMAL(10, 2) NOT NULL,
     project_id INTEGER REFERENCES projects(id),
     staff_id INTEGER REFERENCES staff(id),
+    vehicle_id INTEGER REFERENCES vehicles(id),
+    recurring_expense_id INTEGER REFERENCES recurring_expenses(id),
     notes TEXT,
     created_by INTEGER REFERENCES users(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create Indexes for Performance
+-- 16. System Settings Table (New v2.1)
+CREATE TABLE system_settings (
+    id SERIAL PRIMARY KEY,
+    category VARCHAR(50) NOT NULL,
+    key_name VARCHAR(100) NOT NULL,
+    value TEXT,
+    description TEXT,
+    updated_by INTEGER REFERENCES users(id),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(category, key_name)
+);
+
+-- Create Indexes
 CREATE INDEX idx_projects_client_id ON projects(client_id);
 CREATE INDEX idx_projects_status ON projects(status);
-CREATE INDEX idx_project_assignments_project_id ON project_assignments(project_id);
-CREATE INDEX idx_project_assignments_staff_id ON project_assignments(staff_id);
-CREATE INDEX idx_project_progress_project_id ON project_progress(project_id);
-CREATE INDEX idx_vehicle_usage_vehicle_id ON vehicle_usage(vehicle_id);
 CREATE INDEX idx_finance_records_date ON finance_records(record_date);
-CREATE INDEX idx_finance_records_type ON finance_records(record_type);
+CREATE INDEX idx_finance_records_project ON finance_records(project_id);
 
--- Insert Default Admin User (password: admin123)
--- Hash generated using: node database/init-admin.js
+-- Insert Default Admin User
 INSERT INTO users (username, password_hash, name, email)
 VALUES ('admin', '$2a$10$UNcukqejRu/DN1ERKE7iV.IMdk0v7rbtQh6jjRC6bRSqVcWvhTFBS', 'Administrator', 'admin@fftsolar.com');
 
--- Sample Data for Development
-INSERT INTO clients (company_name, contact_person, phone, email, rate_per_watt) VALUES
-('SunPower Corp', 'John Smith', '416-123-4567', 'john@sunpower.com', 0.50),
-('Canadian Solar Inc', 'Jane Doe', '647-234-5678', 'jane@canadiansolar.com', 0.48);
+-- Sample Client Data (Updated)
+INSERT INTO clients (company_name, contact_person, phone, email, price_model, rate_per_watt) VALUES
+('SunPower Corp', 'John Smith', '416-123-4567', 'john@sunpower.com', 'per_watt', 0.50),
+('Canadian Solar Inc', 'Jane Doe', '647-234-5678', 'jane@canadiansolar.com', 'per_watt', 0.48);
 
 INSERT INTO staff (name, role, phone, email, pay_type, pay_rate) VALUES
 ('张三', 'electrician', '416-111-1111', 'zhangsan@email.com', 'per_project', 150.00),
