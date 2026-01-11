@@ -27,6 +27,34 @@ app.use((req, res, next) => {
   next();
 });
 
+// Debug Route (Temporary)
+app.get('/api/debug-db', async (req, res) => {
+  try {
+    const { sequelize } = require('./config/database');
+    await sequelize.authenticate();
+    const [results] = await sequelize.query("SELECT table_name FROM information_schema.tables WHERE table_schema='public'");
+    const [users] = await sequelize.query("SELECT * FROM users WHERE username='admin'");
+
+    res.json({
+      status: 'success',
+      message: 'Database connection working',
+      tables: results.map(r => r.table_name),
+      adminUserFound: users.length > 0,
+      env: {
+        db_user: process.env.DB_USER,
+        db_host: process.env.DB_HOST,
+        // db_pass_len: process.env.DB_PASSWORD ? process.env.DB_PASSWORD.length : 0
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 // API Routes
 app.use('/api', routes);
 
