@@ -20,7 +20,7 @@ COPY database/ ./database/
 RUN mkdir -p uploads
 
 # Expose port
-EXPOSE 3200
+EXPOSE 5200
 
 # Set environment
 ENV NODE_ENV=production
