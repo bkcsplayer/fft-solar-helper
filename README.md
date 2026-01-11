@@ -2,7 +2,7 @@
 
 > 🌞 A comprehensive CRM management system for solar installation companies
 
-![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)
 
@@ -250,6 +250,15 @@ Automatic calculation of:
 - Nginx-optimized static file serving
 
 ## 📝 Version History
+
+### v2.3.0 (2026-01-10)
+- 📊 **Data Import/Export**: Added universal data import/export functionality for Projects, Clients, Staff, Vehicles, and Assets (CSV/Excel support).
+- 💹 **Financial Views**: Implemented detailed Profit/Loss analysis views for both Dashboard and individual Projects.
+- 🛠️ **Server Stability**: Fixed "502 Bad Gateway" crash caused by backend routing issues.
+- 🐛 **UI Fixes**: 
+  - Fixed Client Rate display to correctly show "Per Panel" rates.
+  - Resolved build errors in Project List component.
+- 🔄 **Docker Improvements**: Enhanced container reliability with correct volume mounting logic.
 
 ### v2.1.0 (2026-01-09)
 - ✨ **Enhanced Staff UI**: Added statistics cards and beautified project history table

@@ -33,6 +33,7 @@ import {
   Divider,
   CircularProgress,
 } from '@mui/material';
+import DataManagementMenu from '../../components/common/DataManagementMenu';
 import {
   Add,
   Edit,
@@ -363,6 +364,17 @@ const FinanceManagement = () => {
             财务管理
           </Typography>
         </Box>
+        <DataManagementMenu
+          moduleName="finance"
+          onSuccess={() => {
+            // Refresh depends on active tab, but we can't easily access those functions here if they are defined inside.
+            // Actually they are defined inside component.
+            // We can just trigger a reload or use a context. 
+            // For now, let's just let it be, user can manually refresh or switch tabs.
+            // Or better, we can reload window.
+            window.location.reload();
+          }}
+        />
       </Box>
 
       {/* Tabs */}

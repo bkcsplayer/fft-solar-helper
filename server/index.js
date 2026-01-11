@@ -54,7 +54,8 @@ const startServer = async () => {
   try {
     await testConnection();
 
-    app.listen(PORT, () => {
+    console.log('Database connected. Starting server...');
+    const server = app.listen(PORT, () => {
       console.log('=================================');
       console.log('FFT Solar CRM Server');
       console.log('=================================');
@@ -63,6 +64,7 @@ const startServer = async () => {
       console.log(`API: http://localhost:${PORT}/api`);
       console.log('=================================');
     });
+    server.on('error', (e) => console.error('Server listen error:', e));
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);

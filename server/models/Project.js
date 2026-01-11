@@ -58,12 +58,25 @@ const Project = sequelize.define('Project', {
   bom_file: {
     type: DataTypes.STRING(500)
   },
+  project_type: {
+    type: DataTypes.STRING(20),
+    defaultValue: 'standard',
+    validate: {
+      isIn: [['standard', 'insurance']]
+    }
+  },
+  removal_date: {
+    type: DataTypes.DATEONLY
+  },
   status: {
     type: DataTypes.STRING(20),
     defaultValue: 'pending',
     validate: {
       isIn: [['pending', 'in_progress', 'completed']]
     }
+  },
+  completed_at: {
+    type: DataTypes.DATE
   },
   notes: {
     type: DataTypes.TEXT

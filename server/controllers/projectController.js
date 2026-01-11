@@ -8,6 +8,7 @@ const {
   ProjectLog,
   Staff,
   User,
+  FinanceRecord,
   sequelize
 } = require('../models');
 const { Op } = require('sequelize');
@@ -16,31 +17,68 @@ const telegram = require('../services/telegramService');
 const path = require('path');
 const fs = require('fs');
 
-// Get all projects
+
+
+
+// Get all projects with pagination and filtering
 exports.getProjects = async (req, res) => {
   try {
-    const { search, status, client_id, start_date, end_date } = req.query;
+    const {
+      status,
+      client_id,
+      search,
+      start_date,
+      end_date,
+      page = 1,
+      limit = 10,
+      year,
+      month
+    } = req.query;
 
     const where = {};
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    // Search functionality
     if (search) {
       where[Op.or] = [
         { address: { [Op.iLike]: `%${search}%` } },
         { customer_name: { [Op.iLike]: `%${search}%` } }
       ];
     }
+
     if (status) {
       where.status = status;
     }
+
     if (client_id) {
       where.client_id = client_id;
     }
+
+    // Date filtering
     if (start_date && end_date) {
       where.created_at = {
         [Op.between]: [new Date(start_date), new Date(end_date)]
       };
+    } else if (year) {
+      // Filter by specific year and optional month
+      let startDate, endDate;
+
+      if (month) {
+        // Specific month in year
+        startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+        endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59, 999);
+      } else {
+        // Whole year
+        startDate = new Date(parseInt(year), 0, 1);
+        endDate = new Date(parseInt(year), 11, 31, 23, 59, 59, 999);
+      }
+
+      where.created_at = {
+        [Op.between]: [startDate, endDate]
+      };
     }
 
-    const projects = await Project.findAll({
+    const { count, rows } = await Project.findAndCountAll({
       where,
       include: [
         {
@@ -49,8 +87,13 @@ exports.getProjects = async (req, res) => {
           attributes: ['id', 'company_name', 'rate_per_watt']
         }
       ],
-      order: [['created_at', 'DESC']]
+      order: [['created_at', 'DESC']],
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      distinct: true // Ensure correct count with includes
     });
+
+    const projects = rows;
 
     // Calculate revenue for each project
     const projectsWithRevenue = projects.map(p => {
@@ -83,6 +126,19 @@ exports.createProject = async (req, res) => {
 
   try {
     const { inverters, ...projectData } = req.body;
+
+    // Sanitize dates
+    const dateFields = ['installation_date', 'removal_date', 'completed_at'];
+    dateFields.forEach(field => {
+      if (projectData[field] === 'Invalid date' || projectData[field] === '') {
+        projectData[field] = null;
+      }
+    });
+
+    // If status is completed but no completed_at is provided, set it to now
+    if (projectData.status === 'completed' && !projectData.completed_at) {
+      projectData.completed_at = new Date();
+    }
 
     // Create project
     const project = await Project.create(projectData, { transaction: t });
@@ -153,7 +209,8 @@ exports.getProjectById = async (req, res) => {
           as: 'assignments',
           include: [{ model: Staff, as: 'staff' }]
         },
-        { model: ProjectProgress, as: 'progress' }
+        { model: ProjectProgress, as: 'progress' },
+        { model: FinanceRecord, as: 'finance_records' }
       ]
     });
 
@@ -175,12 +232,33 @@ exports.getProjectById = async (req, res) => {
       }
     }
 
-    const totalExpense = projectData.assignments.reduce(
+    const totalLabor = projectData.assignments.reduce(
       (sum, a) => sum + parseFloat(a.calculated_pay || 0),
       0
     );
-    projectData.project_expense = totalExpense.toFixed(2);
-    projectData.project_profit = (parseFloat(projectData.project_revenue || 0) - totalExpense).toFixed(2);
+
+    // Calculate other income/expenses from finance records
+    const otherIncome = (projectData.finance_records || [])
+      .filter(r => r.record_type === 'income')
+      .reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
+
+    const otherExpense = (projectData.finance_records || [])
+      .filter(r => r.record_type === 'expense')
+      .reduce((sum, r) => sum + parseFloat(r.amount || 0), 0);
+
+    projectData.project_expense = (totalLabor + otherExpense).toFixed(2);
+    projectData.project_profit = (
+      (parseFloat(projectData.project_revenue || 0) + otherIncome) -
+      (totalLabor + otherExpense)
+    ).toFixed(2);
+
+    projectData.financial_summary = {
+      revenue: parseFloat(projectData.project_revenue || 0),
+      labor_cost: totalLabor,
+      other_income: otherIncome,
+      other_expense: otherExpense,
+      net_profit: parseFloat(projectData.project_profit)
+    };
 
     res.json(projectData);
   } catch (error) {
@@ -197,6 +275,18 @@ exports.updateProject = async (req, res) => {
     if (!project) {
       return res.status(404).json({ error: 'Project not found' });
     }
+
+    if (req.body.status && req.body.status === 'completed' && project.status !== 'completed' && !req.body.completed_at) {
+      req.body.completed_at = new Date();
+    }
+
+    // Sanitize dates
+    const dateFields = ['installation_date', 'removal_date', 'completed_at'];
+    dateFields.forEach(field => {
+      if (req.body[field] === 'Invalid date' || req.body[field] === '') {
+        req.body[field] = null;
+      }
+    });
 
     await project.update(req.body);
 
@@ -536,7 +626,10 @@ exports.updateProgress = async (req, res) => {
 
     if (allComplete) {
       await Project.update(
-        { status: 'completed' },
+        {
+          status: 'completed',
+          completed_at: new Date()
+        },
         { where: { id: projectId } }
       );
     }
@@ -566,7 +659,32 @@ exports.getProjectFinance = async (req, res) => {
           model: ProjectAssignment,
           as: 'assignments',
           include: [{ model: Staff, as: 'staff' }]
+        },
+        { model: ProjectInverter, as: 'inverters' },
+        {
+          model: ProjectProgress,
+          as: 'progress',
+          include: [{ model: User, as: 'completed_by_user', attributes: ['name'] }]
+        },
+        {
+          model: ProjectFile,
+          as: 'files',
+          include: [{ model: User, as: 'uploader', attributes: ['name'] }]
+        },
+        {
+          model: ProjectLog,
+          as: 'logs',
+          include: [{ model: User, as: 'creator', attributes: ['name'] }]
+        },
+        {
+          model: FinanceRecord,
+          as: 'finance_records'
         }
+      ],
+      order: [
+        [{ model: ProjectProgress, as: 'progress' }, 'created_at', 'ASC'],
+        [{ model: ProjectFile, as: 'files' }, 'created_at', 'DESC'],
+        [{ model: ProjectLog, as: 'logs' }, 'created_at', 'DESC']
       ]
     });
 
@@ -700,33 +818,26 @@ exports.deleteFile = async (req, res) => {
   }
 };
 
-// Create log
-exports.createLog = async (req, res) => {
+// Get logs
+exports.getLogs = async (req, res) => {
   try {
-    const { content, log_type } = req.body;
-    const project_id = req.params.id;
-
-    const log = await ProjectLog.create({
-      project_id,
-      content,
-      log_type: log_type || 'note',
-      created_by: req.user.id
+    const logs = await ProjectLog.findAll({
+      where: { project_id: req.params.id },
+      include: [{ model: User, as: 'creator', attributes: ['name'] }],
+      order: [['created_at', 'DESC']]
     });
-
-    const completeLog = await ProjectLog.findByPk(log.id, {
-      include: [{ model: User, as: 'creator', attributes: ['name'] }]
-    });
-
-    res.status(201).json(completeLog);
+    res.json(logs);
   } catch (error) {
-    console.error('Create log error:', error);
-    res.status(500).json({ error: 'Failed to create log' });
+    console.error('Get logs error:', error);
+    res.status(500).json({ error: 'Failed to fetch logs' });
   }
 };
 
 // Create log
 exports.createLog = async (req, res) => {
   try {
+    console.log('createLog called with body:', req.body);
+    console.log('User:', req.user);
     const { content, log_type } = req.body;
     const project_id = req.params.id;
 

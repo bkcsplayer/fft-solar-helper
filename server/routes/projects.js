@@ -37,4 +37,8 @@ router.post('/:id/files', upload.single('file'), projectController.uploadFile);
 router.get('/:id/files', projectController.getFiles);
 router.delete('/:id/files/:fileId', projectController.deleteFile);
 
+// Logs
+router.get('/:id/logs', projectController.getLogs);
+router.post('/:id/logs', projectController.createLog);
+
 module.exports = router;

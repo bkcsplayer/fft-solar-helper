@@ -10,7 +10,9 @@ const {
   Asset,
   sequelize
 } = require('../models');
+
 const { Op } = require('sequelize');
+const DashboardService = require('../services/dashboardService');
 
 // Get dashboard overview
 exports.getOverview = async (req, res) => {
@@ -27,92 +29,30 @@ exports.getOverview = async (req, res) => {
       completed_this_month: await Project.count({
         where: {
           status: 'completed',
-          updated_at: { [Op.between]: [startOfMonth, endOfMonth] }
+          completed_at: { [Op.between]: [startOfMonth, endOfMonth] }
         }
       })
     };
 
-    // Monthly total watt
-    const totalWattResult = await Project.findAll({
-      attributes: [
-        [sequelize.literal('SUM(panel_watt * panel_quantity)'), 'total_watt']
-      ],
-      where: {
-        status: 'completed',
-        updated_at: { [Op.between]: [startOfMonth, endOfMonth] }
-      },
-      raw: true
-    });
-    const totalWattThisMonth = parseInt(totalWattResult[0]?.total_watt) || 0;
-
-    // Monthly income
-    const completedProjects = await Project.findAll({
-      where: {
-        status: 'completed',
-        updated_at: { [Op.between]: [startOfMonth, endOfMonth] }
-      },
-      include: [
-        { model: Client, as: 'client' },
-        { model: ProjectAssignment, as: 'assignments' }
-      ]
-    });
-
-    let monthlyProjectIncome = 0;
-    let monthlyLaborCost = 0;
-
-    completedProjects.forEach(project => {
-      if (project.client) {
-        const totalWatt = project.panel_watt * project.panel_quantity;
-        monthlyProjectIncome += totalWatt * parseFloat(project.client.rate_per_watt);
-      }
-
-      const projectExpense = project.assignments.reduce(
-        (sum, a) => sum + parseFloat(a.calculated_pay || 0),
-        0
-      );
-      monthlyLaborCost += projectExpense;
-    });
-
-    const otherIncome = await FinanceRecord.sum('amount', {
-      where: {
-        record_type: 'income',
-        record_date: { [Op.between]: [startOfMonth, endOfMonth] }
-      }
-    }) || 0;
-
-    const otherExpenses = await FinanceRecord.sum('amount', {
-      where: {
-        record_type: 'expense',
-        record_date: { [Op.between]: [startOfMonth, endOfMonth] }
-      }
-    }) || 0;
-
-    const vehicleCosts = await VehicleMaintenance.sum('cost', {
-      where: {
-        maintenance_date: { [Op.between]: [startOfMonth, endOfMonth] }
-      }
-    }) || 0;
-
-    const totalIncome = monthlyProjectIncome + parseFloat(otherIncome);
-    const totalExpense = monthlyLaborCost + parseFloat(otherExpenses) + parseFloat(vehicleCosts);
-    const monthlyProfit = totalIncome - totalExpense;
+    // Calculate monthly stats using Service
+    const stats = await DashboardService.getPeriodStats(startOfMonth, endOfMonth);
 
     res.json({
       projects: projectStats,
       monthly_stats: {
-        total_watt: parseInt(totalWattThisMonth),
+        total_watt: parseInt(stats.total_watt),
         income: {
-          project_income: parseFloat(monthlyProjectIncome.toFixed(2)),
-          other_income: parseFloat(otherIncome),
-          total: parseFloat(totalIncome.toFixed(2))
+          project_income: parseFloat(stats.revenue.project.toFixed(2)),
+          other_income: parseFloat(stats.revenue.other.toFixed(2)),
+          total: parseFloat(stats.revenue.total.toFixed(2))
         },
         expense: {
-          labor_cost: parseFloat(monthlyLaborCost.toFixed(2)),
-          vehicle_cost: parseFloat(vehicleCosts),
-          other: parseFloat(otherExpenses),
-          total: parseFloat(totalExpense.toFixed(2))
+          labor_cost: parseFloat(stats.expense.labor.toFixed(2)),
+          vehicle_cost: parseFloat(stats.expense.vehicle.toFixed(2)),
+          other: parseFloat(stats.expense.other.toFixed(2)),
+          total: parseFloat(stats.expense.total.toFixed(2))
         },
-        profit: parseFloat(monthlyProfit.toFixed(2))
+        profit: parseFloat(stats.net_profit.toFixed(2))
       }
     });
   } catch (error) {
@@ -125,7 +65,6 @@ exports.getOverview = async (req, res) => {
 exports.getChartData = async (req, res) => {
   try {
     const { months = 6 } = req.query;
-
     const chartData = [];
     const now = new Date();
 
@@ -134,62 +73,14 @@ exports.getChartData = async (req, res) => {
       const startOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
       const endOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59);
 
-      const completedProjects = await Project.findAll({
-        where: {
-          status: 'completed',
-          updated_at: { [Op.between]: [startOfMonth, endOfMonth] }
-        },
-        include: [
-          { model: Client, as: 'client' },
-          { model: ProjectAssignment, as: 'assignments' }
-        ]
-      });
-
-      let income = 0;
-      let expense = 0;
-
-      completedProjects.forEach(project => {
-        if (project.client) {
-          const totalWatt = project.panel_watt * project.panel_quantity;
-          income += totalWatt * parseFloat(project.client.rate_per_watt);
-        }
-
-        const projectExpense = project.assignments.reduce(
-          (sum, a) => sum + parseFloat(a.calculated_pay || 0),
-          0
-        );
-        expense += projectExpense;
-      });
-
-      const otherIncome = await FinanceRecord.sum('amount', {
-        where: {
-          record_type: 'income',
-          record_date: { [Op.between]: [startOfMonth, endOfMonth] }
-        }
-      }) || 0;
-
-      const otherExpenses = await FinanceRecord.sum('amount', {
-        where: {
-          record_type: 'expense',
-          record_date: { [Op.between]: [startOfMonth, endOfMonth] }
-        }
-      }) || 0;
-
-      const vehicleCosts = await VehicleMaintenance.sum('cost', {
-        where: {
-          maintenance_date: { [Op.between]: [startOfMonth, endOfMonth] }
-        }
-      }) || 0;
-
-      income += parseFloat(otherIncome);
-      expense += parseFloat(otherExpenses) + parseFloat(vehicleCosts);
+      const stats = await DashboardService.getPeriodStats(startOfMonth, endOfMonth);
 
       chartData.push({
         month: monthDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' }),
-        income: parseFloat(income.toFixed(2)),
-        expense: parseFloat(expense.toFixed(2)),
-        profit: parseFloat((income - expense).toFixed(2)),
-        projects_completed: completedProjects.length
+        income: parseFloat(stats.revenue.total.toFixed(2)),
+        expense: parseFloat(stats.expense.total.toFixed(2)),
+        profit: parseFloat(stats.net_profit.toFixed(2)),
+        projects_completed: stats.projects_count
       });
     }
 
@@ -248,11 +139,11 @@ exports.getAnalytics = async (req, res) => {
     const staffPerformance = await ProjectAssignment.findAll({
       include: [
         { model: Staff, as: 'staff', attributes: ['name', 'role'] },
-        { 
-          model: Project, 
-          as: 'project', 
+        {
+          model: Project,
+          as: 'project',
           where: { status: 'completed' },
-          attributes: ['panel_quantity']
+          attributes: ['panel_quantity', 'panel_watt']
         }
       ]
     });
@@ -262,12 +153,12 @@ exports.getAnalytics = async (req, res) => {
       if (pa.staff) {
         const name = pa.staff.name;
         if (!staffStats[name]) {
-          staffStats[name] = { 
-            name, 
+          staffStats[name] = {
+            name,
             role: pa.staff.role,
-            panels: 0, 
-            earnings: 0, 
-            projects: 0 
+            panels: 0,
+            earnings: 0,
+            projects: 0
           };
         }
         staffStats[name].panels += pa.project?.panel_quantity || 0;
@@ -286,7 +177,6 @@ exports.getAnalytics = async (req, res) => {
 
     // 4. Expense Categories
     const expenseCategories = await FinanceRecord.findAll({
-      where: { record_type: 'expense' },
       attributes: ['category', [sequelize.fn('SUM', sequelize.col('amount')), 'total']],
       group: ['category'],
       raw: true
@@ -300,23 +190,28 @@ exports.getAnalytics = async (req, res) => {
       utilities: 'Utilities',
       marketing: 'Marketing',
       training: 'Training',
-      staff_bonus: 'Staff Bonus'
+      staff_bonus: 'Staff Bonus',
+      materials: 'Materials',
+      vehicle_maintenance: 'Vehicle Main.',
+      salary: 'Salary',
+      other: 'Other'
     };
 
     const expenseCategoryData = expenseCategories.map(e => ({
       name: categoryLabels[e.category] || e.category,
-      value: parseFloat(e.total)
+      value: parseFloat(e.total || 0)
     }));
 
-    // 5. Panel Brands Distribution
+    // 5. Panel Brands Distribution (Completed projects only)
     const panelBrands = await Project.findAll({
       attributes: ['panel_brand', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
+      where: { status: 'completed' },
       group: ['panel_brand'],
       raw: true
     });
 
     const panelBrandData = panelBrands.map(b => ({
-      name: b.panel_brand,
+      name: b.panel_brand || 'Unknown',
       value: parseInt(b.count)
     }));
 
@@ -332,11 +227,11 @@ exports.getAnalytics = async (req, res) => {
       if (u.vehicle) {
         const plate = u.vehicle.plate_number;
         if (!vehicleStats[plate]) {
-          vehicleStats[plate] = { 
-            plate, 
+          vehicleStats[plate] = {
+            plate,
             model: u.vehicle.model,
-            trips: 0, 
-            distance: 0 
+            trips: 0,
+            distance: 0
           };
         }
         vehicleStats[plate].trips += 1;
@@ -354,11 +249,9 @@ exports.getAnalytics = async (req, res) => {
       const startOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
       const endOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59);
 
-      const result = await Project.findAll({
-        attributes: [
-          [sequelize.literal('SUM(panel_watt * panel_quantity)'), 'total_watt'],
-          [sequelize.fn('COUNT', sequelize.col('id')), 'projects']
-        ],
+      // Fetch projects instead of summing in SQL to avoid ID group by issues
+      const monthProjects = await Project.findAll({
+        attributes: ['panel_watt', 'panel_quantity'],
         where: {
           status: 'completed',
           updated_at: { [Op.between]: [startOfMonth, endOfMonth] }
@@ -366,10 +259,12 @@ exports.getAnalytics = async (req, res) => {
         raw: true
       });
 
+      const totalWatt = monthProjects.reduce((sum, p) => sum + (p.panel_watt * p.panel_quantity), 0);
+
       wattTrend.push({
         month: monthDate.toLocaleDateString('en-US', { month: 'short' }),
-        watt: parseInt(result[0]?.total_watt) || 0,
-        projects: parseInt(result[0]?.projects) || 0
+        watt: totalWatt,
+        projects: monthProjects.length
       });
     }
 
@@ -404,5 +299,55 @@ exports.getAnalytics = async (req, res) => {
   } catch (error) {
     console.error('Get analytics error:', error);
     res.status(500).json({ error: 'Failed to fetch analytics data' });
+  }
+};
+
+// Get financial details for a specific month
+exports.getFinancialDetails = async (req, res) => {
+  try {
+    const { month, year } = req.query;
+
+    // Default to current month if not specified or invalid
+    const now = new Date();
+    let targetMonth = now.getMonth();
+    let targetYear = now.getFullYear();
+
+    if (month && !isNaN(parseInt(month))) {
+      targetMonth = parseInt(month) - 1;
+    }
+    if (year && !isNaN(parseInt(year))) {
+      targetYear = parseInt(year);
+    }
+
+    const startOfMonth = new Date(targetYear, targetMonth, 1);
+    const endOfMonth = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59);
+
+    console.log(`Getting financial details for: ${startOfMonth.toISOString()} to ${endOfMonth.toISOString()}`);
+
+    const details = await DashboardService.getFinancialDetails(startOfMonth, endOfMonth);
+
+    // Calculate totals from details
+    const totalIncome = details.income.reduce((sum, item) => sum + item.amount, 0);
+    const totalExpense = details.expense.reduce((sum, item) => sum + item.amount, 0);
+
+    res.json({
+      period: {
+        month: targetMonth + 1,
+        year: targetYear
+      },
+      summary: {
+        totalIncome: parseFloat(totalIncome.toFixed(2)),
+        totalExpense: parseFloat(totalExpense.toFixed(2)),
+        netProfit: parseFloat((totalIncome - totalExpense).toFixed(2))
+      },
+      details: {
+        income: details.income,
+        expense: details.expense
+      }
+    });
+
+  } catch (error) {
+    console.error('Get financial details error:', error);
+    res.status(500).json({ error: 'Failed to fetch financial details' });
   }
 };

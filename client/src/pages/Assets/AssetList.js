@@ -13,6 +13,7 @@ import {
   Paper,
   Button,
 } from '@mui/material';
+import DataManagementMenu from '../../components/common/DataManagementMenu';
 import { Build, Add } from '@mui/icons-material';
 import api from '../../services/api';
 import AssetDetail from './AssetDetail';
@@ -81,7 +82,10 @@ const AssetList = () => {
             资产设备管理
           </Typography>
         </Box>
+
+
         <Box sx={filterContainerStyle}>
+          <DataManagementMenu moduleName="assets" onSuccess={fetchAssets} />
           <Button
             variant="contained"
             startIcon={<Add />}

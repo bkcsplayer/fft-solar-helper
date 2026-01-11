@@ -19,7 +19,7 @@ const ProjectProgress = sequelize.define('ProjectProgress', {
     type: DataTypes.STRING(30),
     allowNull: false,
     validate: {
-      isIn: [['roof_base', 'electrical', 'roof_install', 'bird_net']]
+      isIn: [['removal', 'roof_base', 'electrical', 'roof_install', 'bird_net']]
     }
   },
   is_completed: {

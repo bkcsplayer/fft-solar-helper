@@ -18,6 +18,7 @@ import {
   MenuItem,
   Paper,
 } from '@mui/material';
+import DataManagementMenu from '../../components/common/DataManagementMenu';
 import { Edit, Add, People } from '@mui/icons-material';
 import api from '../../services/api';
 import StaffDetail from './StaffDetail';
@@ -109,9 +110,12 @@ const StaffList = () => {
               <MenuItem value="">All</MenuItem>
               <MenuItem value="leader">Leader</MenuItem>
               <MenuItem value="installer">Installer</MenuItem>
+
+
               <MenuItem value="electrician">Electrician</MenuItem>
             </Select>
           </FormControl>
+          <DataManagementMenu moduleName="staff" onSuccess={fetchStaff} />
           <Button
             variant="contained"
             startIcon={<Add />}

@@ -16,8 +16,11 @@ import {
   InputLabel,
   Select,
   MenuItem,
+
   Paper,
+  TablePagination
 } from '@mui/material';
+import DataManagementMenu from '../../components/common/DataManagementMenu';
 import { Edit, Visibility, Add, Construction, Delete } from '@mui/icons-material';
 import api from '../../services/api';
 import ConfirmDialog from '../../components/ConfirmDialog';
@@ -51,20 +54,47 @@ const ProjectList = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
+  const [yearFilter, setYearFilter] = useState('');
+  const [monthFilter, setMonthFilter] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [total, setTotal] = useState(0);
   const [confirmDialog, setConfirmDialog] = useState({ open: false, projectId: null, projectAddress: '' });
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchProjects();
-  }, [statusFilter]);
+  }, [statusFilter, yearFilter, monthFilter, page, rowsPerPage]);
+
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
   const fetchProjects = async () => {
     try {
-      const params = {};
+      const params = {
+        page: page + 1,
+        limit: rowsPerPage
+      };
       if (statusFilter) params.status = statusFilter;
+      if (yearFilter) params.year = yearFilter;
+      if (monthFilter) params.month = monthFilter;
 
       const response = await api.get('/projects', { params });
-      setProjects(response.data);
+
+      if (response.data.pagination) {
+        setProjects(response.data.data);
+        setTotal(response.data.pagination.total);
+      } else {
+        // Fallback for old API response (array)
+        setProjects(response.data);
+        setTotal(response.data.length);
+      }
     } catch (error) {
       console.error('Failed to fetch projects:', error);
     } finally {
@@ -107,7 +137,33 @@ const ProjectList = () => {
             Project Management
           </Typography>
         </Box>
-        <Box sx={filterContainerStyle}>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <FormControl sx={{ minWidth: 100, ...modernInputStyle }}>
+            <InputLabel>Year</InputLabel>
+            <Select
+              value={yearFilter}
+              label="Year"
+              onChange={(e) => setYearFilter(e.target.value)}
+            >
+              <MenuItem value="">All</MenuItem>
+              <MenuItem value="2024">2024</MenuItem>
+              <MenuItem value="2025">2025</MenuItem>
+              <MenuItem value="2026">2026</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl sx={{ minWidth: 100, ...modernInputStyle }}>
+            <InputLabel>Month</InputLabel>
+            <Select
+              value={monthFilter}
+              label="Month"
+              onChange={(e) => setMonthFilter(e.target.value)}
+            >
+              <MenuItem value="">All</MenuItem>
+              {[...Array(12)].map((_, i) => (
+                <MenuItem key={i + 1} value={i + 1}>{i + 1}月</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
           <FormControl sx={{ minWidth: 150, ...modernInputStyle }}>
             <InputLabel>Filter by Status</InputLabel>
             <Select
@@ -119,8 +175,11 @@ const ProjectList = () => {
               <MenuItem value="pending">Pending</MenuItem>
               <MenuItem value="in_progress">In Progress</MenuItem>
               <MenuItem value="completed">Completed</MenuItem>
+
+
             </Select>
           </FormControl>
+          <DataManagementMenu moduleName="projects" onSuccess={fetchProjects} />
           <Button
             variant="contained"
             startIcon={<Add />}
@@ -131,6 +190,7 @@ const ProjectList = () => {
           </Button>
         </Box>
       </Box>
+
 
       <TableContainer component={Paper} sx={modernTableContainerStyle}>
         <Table>
@@ -271,6 +331,15 @@ const ProjectList = () => {
             )}
           </TableBody>
         </Table>
+        <TablePagination
+          rowsPerPageOptions={[10, 20, 50]}
+          component="div"
+          count={total}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+        />
       </TableContainer>
 
       <ConfirmDialog
@@ -282,7 +351,7 @@ const ProjectList = () => {
         confirmText="删除"
         cancelText="取消"
       />
-    </Box>
+    </Box >
   );
 };
 

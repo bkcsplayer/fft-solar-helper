@@ -38,6 +38,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import api from '../services/api';
+import FinancialDetailsModal from '../components/dashboard/FinancialDetailsModal';
 
 // Modern Card Styles
 const modernCardStyle = {
@@ -62,22 +63,26 @@ const gradientColors = {
 };
 
 // Stat Card Component with Modern Design
-const StatCard = ({ title, value, subtitle, icon, color, gradient }) => (
-  <Card sx={{ 
+const StatCard = ({ title, value, subtitle, icon, color, gradient, onClick }) => (
+  <Card sx={{
     ...modernCardStyle,
     height: '100%',
     overflow: 'visible',
-  }}>
+    cursor: 'pointer',
+    position: 'relative'
+  }}
+    onClick={onClick}
+  >
     <CardContent sx={{ p: 3 }}>
       <Box display="flex" justifyContent="space-between" alignItems="flex-start">
         <Box sx={{ flex: 1 }}>
-          <Typography 
-            color="text.secondary" 
-            gutterBottom 
+          <Typography
+            color="text.secondary"
+            gutterBottom
             variant="body2"
-            sx={{ 
-              fontWeight: 500, 
-              textTransform: 'uppercase', 
+            sx={{
+              fontWeight: 500,
+              textTransform: 'uppercase',
               letterSpacing: '0.5px',
               fontSize: '0.75rem',
               mb: 1.5
@@ -85,10 +90,10 @@ const StatCard = ({ title, value, subtitle, icon, color, gradient }) => (
           >
             {title}
           </Typography>
-          <Typography 
-            variant="h4" 
-            component="div" 
-            sx={{ 
+          <Typography
+            variant="h4"
+            component="div"
+            sx={{
               fontWeight: 700,
               background: gradient || gradientColors.blue,
               WebkitBackgroundClip: 'text',
@@ -100,9 +105,9 @@ const StatCard = ({ title, value, subtitle, icon, color, gradient }) => (
             {value}
           </Typography>
           {subtitle && (
-            <Typography 
-              variant="body2" 
-              sx={{ 
+            <Typography
+              variant="body2"
+              sx={{
                 color: 'text.secondary',
                 fontSize: '0.8rem',
                 mt: 0.5
@@ -133,16 +138,16 @@ const StatCard = ({ title, value, subtitle, icon, color, gradient }) => (
 
 // Chart Card Component with Modern Design
 const ChartCard = ({ title, children, height = 300 }) => (
-  <Card sx={{ 
+  <Card sx={{
     ...modernCardStyle,
     height: '100%',
   }}>
     <CardContent sx={{ p: 3 }}>
-      <Typography 
-        variant="h6" 
-        gutterBottom 
-        sx={{ 
-          fontWeight: 700, 
+      <Typography
+        variant="h6"
+        gutterBottom
+        sx={{
+          fontWeight: 700,
           mb: 3,
           color: '#1e293b',
           fontSize: '1rem',
@@ -174,6 +179,13 @@ const Dashboard = () => {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
+  const [financialDetailsOpen, setFinancialDetailsOpen] = useState(false);
+  const [detailsType, setDetailsType] = useState(0); // 0 for income, 1 for expense
+
+  const handleOpenDetails = (type) => {
+    setDetailsType(type);
+    setFinancialDetailsOpen(true);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -212,10 +224,10 @@ const Dashboard = () => {
   const CurrencyTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <Box sx={{ 
-          bgcolor: 'rgba(255, 255, 255, 0.95)', 
+        <Box sx={{
+          bgcolor: 'rgba(255, 255, 255, 0.95)',
           backdropFilter: 'blur(10px)',
-          p: 2, 
+          p: 2,
           borderRadius: '12px',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
           border: '1px solid rgba(255, 255, 255, 0.8)'
@@ -233,18 +245,18 @@ const Dashboard = () => {
   };
 
   return (
-    <Box sx={{ 
+    <Box sx={{
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%)',
       mx: -3,
       mt: -3,
       p: 3,
     }}>
-      <Typography 
-        variant="h4" 
-        gutterBottom 
-        sx={{ 
-          fontWeight: 800, 
+      <Typography
+        variant="h4"
+        gutterBottom
+        sx={{
+          fontWeight: 800,
           mb: 4,
           color: '#0f172a',
           letterSpacing: '-0.02em',
@@ -255,7 +267,7 @@ const Dashboard = () => {
       </Typography>
 
       {/* Modern Tabs */}
-      <Box sx={{ 
+      <Box sx={{
         mb: 4,
         background: 'white',
         borderRadius: '16px',
@@ -263,8 +275,8 @@ const Dashboard = () => {
         boxShadow: '0 2px 12px rgba(0, 0, 0, 0.06)',
         display: 'inline-flex',
       }}>
-        <Tabs 
-          value={tabValue} 
+        <Tabs
+          value={tabValue}
           onChange={(e, v) => setTabValue(v)}
           sx={{
             minHeight: '44px',
@@ -309,6 +321,7 @@ const Dashboard = () => {
               subtitle={`Projects: $${data.monthly_stats.income.project_income.toLocaleString()}`}
               icon={<TrendingUp sx={{ fontSize: 28 }} />}
               gradient={gradientColors.green}
+              onClick={() => handleOpenDetails(0)}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
@@ -318,6 +331,7 @@ const Dashboard = () => {
               subtitle={`Labor: $${data.monthly_stats.expense.labor_cost.toLocaleString()}`}
               icon={<TrendingDown sx={{ fontSize: 28 }} />}
               gradient={gradientColors.red}
+              onClick={() => handleOpenDetails(1)}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
@@ -326,6 +340,7 @@ const Dashboard = () => {
               value={`$${data.monthly_stats.profit.toLocaleString()}`}
               icon={<AttachMoney sx={{ fontSize: 28 }} />}
               gradient={gradientColors.blue}
+              onClick={() => handleOpenDetails(0)}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
@@ -344,17 +359,17 @@ const Dashboard = () => {
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4caf50" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#4caf50" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#4caf50" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#4caf50" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f44336" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#f44336" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#f44336" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#f44336" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} />
+                  <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
                   <Tooltip content={<CurrencyTooltip />} />
                   <Legend />
                   <Area type="monotone" dataKey="income" name="Revenue" stroke="#4caf50" fillOpacity={1} fill="url(#colorIncome)" strokeWidth={2} />
@@ -394,10 +409,10 @@ const Dashboard = () => {
           <Grid item xs={12} md={6}>
             <Card sx={modernCardStyle}>
               <CardContent sx={{ p: 3 }}>
-                <Typography 
-                  variant="h6" 
-                  gutterBottom 
-                  sx={{ 
+                <Typography
+                  variant="h6"
+                  gutterBottom
+                  sx={{
                     fontWeight: 700,
                     color: '#1e293b',
                     mb: 3,
@@ -408,8 +423,8 @@ const Dashboard = () => {
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={6}>
-                    <Box sx={{ 
-                      p: 2.5, 
+                    <Box sx={{
+                      p: 2.5,
                       background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
                       borderRadius: '16px',
                       transition: 'transform 0.2s ease',
@@ -422,8 +437,8 @@ const Dashboard = () => {
                     </Box>
                   </Grid>
                   <Grid item xs={6}>
-                    <Box sx={{ 
-                      p: 2.5, 
+                    <Box sx={{
+                      p: 2.5,
                       background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
                       borderRadius: '16px',
                       transition: 'transform 0.2s ease',
@@ -436,8 +451,8 @@ const Dashboard = () => {
                     </Box>
                   </Grid>
                   <Grid item xs={6}>
-                    <Box sx={{ 
-                      p: 2.5, 
+                    <Box sx={{
+                      p: 2.5,
                       background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
                       borderRadius: '16px',
                       transition: 'transform 0.2s ease',
@@ -450,8 +465,8 @@ const Dashboard = () => {
                     </Box>
                   </Grid>
                   <Grid item xs={6}>
-                    <Box sx={{ 
-                      p: 2.5, 
+                    <Box sx={{
+                      p: 2.5,
                       background: 'linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)',
                       borderRadius: '16px',
                       transition: 'transform 0.2s ease',
@@ -502,7 +517,7 @@ const Dashboard = () => {
               <ResponsiveContainer>
                 <BarChart data={analytics?.clientRevenue || []} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
-                  <XAxis type="number" tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} />
+                  <XAxis type="number" tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
                   <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11 }} />
                   <Tooltip formatter={(value) => `$${value.toLocaleString()}`} />
                   <Bar dataKey="revenue" name="Revenue" fill="#2196f3" radius={[0, 4, 4, 0]}>
@@ -548,12 +563,12 @@ const Dashboard = () => {
                 <LineChart data={analytics?.wattTrend || []}>
                   <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
                   <XAxis dataKey="month" />
-                  <YAxis yAxisId="left" tickFormatter={(v) => `${(v/1000).toFixed(0)}kW`} />
+                  <YAxis yAxisId="left" tickFormatter={(v) => `${(v / 1000).toFixed(0)}kW`} />
                   <YAxis yAxisId="right" orientation="right" />
-                  <Tooltip 
-                    formatter={(value, name) => 
+                  <Tooltip
+                    formatter={(value, name) =>
                       name === 'Watts' ? `${value.toLocaleString()} W` : value
-                    } 
+                    }
                   />
                   <Legend />
                   <Bar yAxisId="left" dataKey="watt" name="Watts" fill="#ff9800" radius={[4, 4, 0, 0]} />
@@ -570,7 +585,7 @@ const Dashboard = () => {
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
                   <XAxis dataKey="month" />
-                  <YAxis tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} />
+                  <YAxis tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
                   <Tooltip content={<CurrencyTooltip />} />
                   <Legend />
                   <Bar dataKey="income" name="Revenue" fill="#4caf50" radius={[4, 4, 0, 0]} />
@@ -594,8 +609,8 @@ const Dashboard = () => {
                   <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
                   <XAxis type="number" />
                   <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 11 }} />
-                  <Tooltip 
-                    formatter={(value, name) => 
+                  <Tooltip
+                    formatter={(value, name) =>
                       name === 'Earnings' ? `$${value.toLocaleString()}` : value
                     }
                   />
@@ -655,13 +670,13 @@ const Dashboard = () => {
           <Grid item xs={12}>
             <Card sx={modernCardStyle}>
               <CardContent sx={{ p: 3 }}>
-                <Typography 
-                  variant="h6" 
-                  gutterBottom 
-                  sx={{ 
-                    fontWeight: 700, 
-                    display: 'flex', 
-                    alignItems: 'center', 
+                <Typography
+                  variant="h6"
+                  gutterBottom
+                  sx={{
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
                     gap: 1.5,
                     color: '#1e293b',
                     mb: 3,
@@ -680,7 +695,7 @@ const Dashboard = () => {
                   </Box>
                   Staff Earnings Summary
                 </Typography>
-                <Box sx={{ 
+                <Box sx={{
                   overflowX: 'auto',
                   borderRadius: '16px',
                   border: '1px solid #e2e8f0',
@@ -698,24 +713,24 @@ const Dashboard = () => {
                     </thead>
                     <tbody>
                       {(analytics?.staffPerformance || []).map((staff, index) => (
-                        <tr 
-                          key={index} 
-                          style={{ 
+                        <tr
+                          key={index}
+                          style={{
                             backgroundColor: index % 2 === 0 ? 'transparent' : '#f8fafc',
                             transition: 'background-color 0.2s ease'
                           }}
                         >
                           <td style={{ padding: '14px 20px', borderTop: '1px solid #e2e8f0', fontWeight: 500, color: '#1e293b' }}>{staff.name}</td>
                           <td style={{ padding: '14px 20px', borderTop: '1px solid #e2e8f0' }}>
-                            <Box sx={{ 
-                              display: 'inline-block', 
-                              px: 2, 
-                              py: 0.75, 
+                            <Box sx={{
+                              display: 'inline-block',
+                              px: 2,
+                              py: 0.75,
                               borderRadius: '8px',
-                              background: staff.role === 'electrician' 
-                                ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)' 
-                                : staff.role === 'leader' 
-                                  ? 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)' 
+                              background: staff.role === 'electrician'
+                                ? 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)'
+                                : staff.role === 'leader'
+                                  ? 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)'
                                   : 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
                               color: staff.role === 'electrician' ? '#1e40af' : staff.role === 'leader' ? '#065f46' : '#92400e',
                               fontSize: '0.75rem',
@@ -727,11 +742,11 @@ const Dashboard = () => {
                           </td>
                           <td style={{ padding: '14px 20px', textAlign: 'right', borderTop: '1px solid #e2e8f0', fontWeight: 700, color: '#1e293b' }}>{staff.panels}</td>
                           <td style={{ padding: '14px 20px', textAlign: 'right', borderTop: '1px solid #e2e8f0', color: '#64748b' }}>{staff.projects}</td>
-                          <td style={{ 
-                            padding: '14px 20px', 
-                            textAlign: 'right', 
-                            borderTop: '1px solid #e2e8f0', 
-                            fontWeight: 700, 
+                          <td style={{
+                            padding: '14px 20px',
+                            textAlign: 'right',
+                            borderTop: '1px solid #e2e8f0',
+                            fontWeight: 700,
                             background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
@@ -749,6 +764,11 @@ const Dashboard = () => {
           </Grid>
         </Grid>
       )}
+      <FinancialDetailsModal
+        open={financialDetailsOpen}
+        onClose={() => setFinancialDetailsOpen(false)}
+        initialTab={detailsType}
+      />
     </Box>
   );
 };

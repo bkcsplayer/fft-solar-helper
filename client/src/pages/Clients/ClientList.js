@@ -14,6 +14,7 @@ import {
   Chip,
   Paper,
 } from '@mui/material';
+import DataManagementMenu from '../../components/common/DataManagementMenu';
 import { Edit, Add, Business, Delete } from '@mui/icons-material';
 import api from '../../services/api';
 import ConfirmDialog from '../../components/ConfirmDialog';
@@ -83,18 +84,23 @@ const ClientList = () => {
           }}>
             <Business sx={{ color: 'white', fontSize: 28 }} />
           </Box>
+
+
           <Typography sx={pageTitleStyle} style={{ marginBottom: 0 }}>
             Client Management
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => navigate('/clients/new')}
-          sx={modernButtonStyle}
-        >
-          Add Client
-        </Button>
+        <Box display="flex" gap={2}>
+          <DataManagementMenu moduleName="clients" onSuccess={fetchClients} />
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => navigate('/clients/new')}
+            sx={modernButtonStyle}
+          >
+            Add Client
+          </Button>
+        </Box>
       </Box>
 
       <TableContainer component={Paper} sx={modernTableContainerStyle}>
@@ -105,7 +111,7 @@ const ClientList = () => {
               <TableCell>Contact Person</TableCell>
               <TableCell>Phone</TableCell>
               <TableCell>Email</TableCell>
-              <TableCell>Rate ($/W)</TableCell>
+              <TableCell>Rate</TableCell>
               <TableCell>Status</TableCell>
               <TableCell align="center">Actions</TableCell>
             </TableRow>
@@ -139,14 +145,20 @@ const ClientList = () => {
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    <Typography sx={{
-                      fontWeight: 700,
-                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                    }}>
-                      ${client.rate_per_watt}
-                    </Typography>
+                    <Box>
+                      <Typography sx={{
+                        fontWeight: 700,
+                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        display: 'inline-block'
+                      }}>
+                        ${client.price_model === 'per_panel' ? client.rate_per_panel : client.rate_per_watt}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary', ml: 0.5 }}>
+                        /{client.price_model === 'per_panel' ? 'Panel' : 'W'}
+                      </Typography>
+                    </Box>
                   </TableCell>
                   <TableCell>
                     <Chip

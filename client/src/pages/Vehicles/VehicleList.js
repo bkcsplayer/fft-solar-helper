@@ -13,6 +13,7 @@ import {
   Paper,
   Button,
 } from '@mui/material';
+import DataManagementMenu from '../../components/common/DataManagementMenu';
 import { DirectionsCar, Add } from '@mui/icons-material';
 import api from '../../services/api';
 import VehicleDetail from './VehicleDetail';
@@ -69,7 +70,10 @@ const VehicleList = () => {
             车辆管理
           </Typography>
         </Box>
+
+
         <Box sx={filterContainerStyle}>
+          <DataManagementMenu moduleName="vehicles" onSuccess={fetchVehicles} />
           <Button
             variant="contained"
             startIcon={<Add />}

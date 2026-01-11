@@ -148,5 +148,6 @@ module.exports = {
   FinanceRecord,
   RecurringExpense,
   SystemSetting,
-  SystemSettings
+  SystemSettings,
+  ProjectLog
 };

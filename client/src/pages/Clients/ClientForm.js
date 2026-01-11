@@ -10,6 +10,10 @@ import {
   CircularProgress,
   Card,
   CardContent,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import { ArrowBack, Save, Business } from '@mui/icons-material';
 import api from '../../services/api';
@@ -84,7 +88,14 @@ const ClientForm = () => {
         await api.put(`/clients/${id}`, formData);
         setSuccess('Client information updated successfully!');
       } else {
-        await api.post('/clients', formData);
+        // Clean up empty values for numeric fields
+        const payload = { ...formData };
+        if (payload.price_model === 'per_panel') {
+          payload.rate_per_watt = null;
+        } else {
+          payload.rate_per_panel = null;
+        }
+        await api.post('/clients', payload);
         setSuccess('Client created successfully!');
       }
 
