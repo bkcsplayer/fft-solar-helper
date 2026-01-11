@@ -1,130 +1,138 @@
 #!/bin/bash
+# FFT Solar CRM - Deployment Script v3.0
+# Usage: ./deploy.sh [pull|install|build|restart|full]
 
-# FFT Solar CRM v2.0 一键部署脚本
-# 用于从v1升级到v2.0
+set -e
 
-set -e  # 遇到错误立即退出
-
-echo "=================================="
-echo "FFT Solar CRM v2.0 自动部署"
-echo "=================================="
-echo ""
-
-# 颜色定义
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# 项目目录
+# Configuration
+API_PORT=6200
 PROJECT_DIR="/www/wwwroot/fft-solar-helper"
-BACKUP_DIR="/www/wwwroot/backups"
+PM2_APP_NAME="fft-solar-api"
 
-# 步骤1: 检查当前目录
-echo -e "${YELLOW}[1/10]${NC} 检查项目目录..."
-if [ ! -d "$PROJECT_DIR" ]; then
-    echo -e "${RED}❌ 错误：项目目录不存在: $PROJECT_DIR${NC}"
-    exit 1
-fi
-cd "$PROJECT_DIR"
-echo -e "${GREEN}✅ 项目目录确认${NC}"
+echo -e "${GREEN}================================${NC}"
+echo -e "${GREEN}FFT Solar CRM Deployment v3.0${NC}"
+echo -e "${GREEN}================================${NC}"
 
-# 步骤2: 创建备份
-echo -e "${YELLOW}[2/10]${NC} 备份当前版本..."
-mkdir -p "$BACKUP_DIR"
-BACKUP_FILE="$BACKUP_DIR/fft-solar-v1-backup-$(date +%Y%m%d-%H%M%S).tar.gz"
-tar -czf "$BACKUP_FILE" .
-echo -e "${GREEN}✅ 备份完成: $BACKUP_FILE${NC}"
+# Function: Pull latest code
+pull_code() {
+    echo -e "${YELLOW}Pulling latest code...${NC}"
+    git fetch --all
+    git reset --hard origin/main
+    echo -e "${GREEN}✓ Code updated${NC}"
+}
 
-# 步骤3: 停止服务
-echo -e "${YELLOW}[3/10]${NC} 停止当前服务..."
-docker-compose down
-echo -e "${GREEN}✅ 服务已停止${NC}"
+# Function: Install dependencies
+install_deps() {
+    echo -e "${YELLOW}Installing backend dependencies...${NC}"
+    npm install --production
+    
+    echo -e "${YELLOW}Installing frontend dependencies...${NC}"
+    cd client
+    npm install
+    cd ..
+    echo -e "${GREEN}✓ Dependencies installed${NC}"
+}
 
-# 步骤4: 保存配置
-echo -e "${YELLOW}[4/10]${NC} 保存配置文件..."
-cp .env .env.backup || echo "警告: .env文件不存在"
-if [ -d "uploads" ]; then
-    cp -r uploads/ uploads-backup/
-fi
-echo -e "${GREEN}✅ 配置文件已保存${NC}"
+# Function: Build frontend
+build_frontend() {
+    echo -e "${YELLOW}Building frontend...${NC}"
+    cd client
+    npm run build
+    cd ..
+    echo -e "${GREEN}✓ Frontend built${NC}"
+}
 
-# 步骤5: 拉取最新代码
-echo -e "${YELLOW}[5/10]${NC} 拉取v2.0代码..."
-git fetch --all
-git checkout main
-git pull origin main
-git checkout v2.0
-echo -e "${GREEN}✅ v2.0代码已拉取${NC}"
+# Function: Restart PM2
+restart_pm2() {
+    echo -e "${YELLOW}Restarting PM2...${NC}"
+    
+    # Check if app exists
+    if pm2 list | grep -q "$PM2_APP_NAME"; then
+        pm2 restart $PM2_APP_NAME
+    else
+        pm2 start ecosystem.config.js --env production
+    fi
+    
+    pm2 save
+    echo -e "${GREEN}✓ PM2 restarted${NC}"
+}
 
-# 步骤6: 恢复配置
-echo -e "${YELLOW}[6/10]${NC} 恢复配置文件..."
-if [ -f ".env.backup" ]; then
-    cp .env.backup .env
-fi
-if [ -d "uploads-backup" ]; then
-    rm -rf uploads/
-    mv uploads-backup/ uploads/
-fi
-echo -e "${GREEN}✅ 配置文件已恢复${NC}"
+# Function: Run database migrations
+run_migrations() {
+    echo -e "${YELLOW}Running database migrations...${NC}"
+    node database/migrate.js
+    echo -e "${GREEN}✓ Migrations complete${NC}"
+}
 
-# 步骤7: 构建并启动服务
-echo -e "${YELLOW}[7/10]${NC} 构建并启动服务..."
-docker system prune -f
-docker-compose up -d --build
-echo -e "${GREEN}✅ 服务正在启动...${NC}"
+# Function: Health check
+health_check() {
+    echo -e "${YELLOW}Running health check...${NC}"
+    sleep 5
+    
+    if curl -s http://localhost:${API_PORT}/health | grep -q "OK"; then
+        echo -e "${GREEN}✓ API is healthy${NC}"
+    else
+        echo -e "${RED}✗ API health check failed${NC}"
+        echo "Check logs: pm2 logs ${PM2_APP_NAME}"
+    fi
+}
 
-# 步骤8: 等待服务启动
-echo -e "${YELLOW}[8/10]${NC} 等待服务启动（30秒）..."
-sleep 30
-echo -e "${GREEN}✅ 服务启动等待完成${NC}"
+# Function: Full deployment
+full_deploy() {
+    pull_code
+    install_deps
+    build_frontend
+    run_migrations
+    restart_pm2
+    health_check
+    
+    echo ""
+    echo -e "${GREEN}================================${NC}"
+    echo -e "${GREEN}Deployment Complete!${NC}"
+    echo -e "${GREEN}================================${NC}"
+    echo -e "API running at: http://localhost:${API_PORT}"
+    echo -e "PM2 status: pm2 status"
+    echo -e "View logs: pm2 logs ${PM2_APP_NAME}"
+}
 
-# 步骤9: 数据库迁移
-echo -e "${YELLOW}[9/10]${NC} 执行数据库迁移..."
-docker-compose exec -T database psql -U postgres -d fft_solar_crm -c "ALTER TABLE projects ADD COLUMN IF NOT EXISTS installation_date DATE;" || echo "迁移可能已执行"
-echo -e "${GREEN}✅ 数据库迁移完成${NC}"
+# Main execution
+case "$1" in
+    pull)
+        pull_code
+        ;;
+    install)
+        install_deps
+        ;;
+    build)
+        build_frontend
+        ;;
+    restart)
+        restart_pm2
+        ;;
+    migrate)
+        run_migrations
+        ;;
+    full)
+        full_deploy
+        ;;
+    *)
+        echo "Usage: $0 {pull|install|build|restart|migrate|full}"
+        echo ""
+        echo "Commands:"
+        echo "  pull     - Pull latest code from git"
+        echo "  install  - Install npm dependencies"
+        echo "  build    - Build frontend for production"
+        echo "  restart  - Restart PM2 process"
+        echo "  migrate  - Run database migrations"
+        echo "  full     - Full deployment (all steps)"
+        exit 1
+        ;;
+esac
 
-# 步骤10: 验证部署
-echo -e "${YELLOW}[10/10]${NC} 验证部署..."
-echo ""
-echo "容器状态:"
-docker-compose ps
-echo ""
-
-# 测试后端
-if curl -s http://localhost:5200/health | grep -q "OK"; then
-    echo -e "${GREEN}✅ 后端API正常${NC}"
-else
-    echo -e "${RED}❌ 后端API异常${NC}"
-fi
-
-# 测试前端
-if curl -s -o /dev/null -w "%{http_code}" http://localhost:5201 | grep -q "200"; then
-    echo -e "${GREEN}✅ 前端服务正常${NC}"
-else
-    echo -e "${RED}❌ 前端服务异常${NC}"
-fi
-
-echo ""
-echo "=================================="
-echo -e "${GREEN}🎉 部署完成！${NC}"
-echo "=================================="
-echo ""
-echo "访问地址: https://fftsolaradmin.khtain.com"
-echo ""
-echo "下一步："
-echo "1. 访问网站并登录"
-echo "2. 进入Settings配置SMTP和Telegram"
-echo "3. 测试新功能"
-echo ""
-echo "如果遇到问题，查看日志："
-echo "  docker-compose logs"
-echo ""
-echo "回滚到v1："
-echo "  cd $PROJECT_DIR"
-echo "  docker-compose down"
-echo "  cd /www/wwwroot"
-echo "  tar -xzf $BACKUP_FILE"
-echo "  cd $PROJECT_DIR"
-echo "  docker-compose up -d"
-echo ""
+exit 0
