@@ -21,6 +21,8 @@ const sequelize = new Sequelize(
 
 const testConnection = async () => {
   try {
+    console.log(`Debug: Attempting DB connection to ${process.env.DB_HOST}:${process.env.DB_PORT} as ${process.env.DB_USER}`);
+    console.log(`Debug: Password length: ${process.env.DB_PASSWORD ? process.env.DB_PASSWORD.length : '0'}`);
     await sequelize.authenticate();
     console.log('✓ Database connection established successfully.');
   } catch (error) {
