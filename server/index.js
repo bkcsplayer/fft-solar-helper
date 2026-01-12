@@ -3,8 +3,11 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 
-const { testConnection } = require('./config/database');
+const { testConnection, sequelize } = require('./config/database');
 const routes = require('./routes');
+
+// Import all models to ensure they're registered for sync
+const models = require('./models');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -81,6 +84,11 @@ app.use((req, res) => {
 const startServer = async () => {
   try {
     await testConnection();
+
+    // Sync database schema - adds missing tables/columns without dropping data
+    console.log('Syncing database schema...');
+    await sequelize.sync({ alter: true });
+    console.log('Database schema synced successfully.');
 
     console.log('Database connected. Starting server...');
     const server = app.listen(PORT, () => {

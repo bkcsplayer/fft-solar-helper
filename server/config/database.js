@@ -15,20 +15,40 @@ const sequelize = new Sequelize(
       min: 0,
       acquire: 30000,
       idle: 10000
+    },
+    // Better error handling for Docker
+    retry: {
+      max: 3
     }
   }
 );
 
-const testConnection = async () => {
-  try {
-    console.log(`Debug: Attempting DB connection to ${process.env.DB_HOST}:${process.env.DB_PORT} as ${process.env.DB_USER}`);
-    console.log(`Debug: Password length: ${process.env.DB_PASSWORD ? process.env.DB_PASSWORD.length : '0'}`);
-    await sequelize.authenticate();
-    console.log('✓ Database connection established successfully.');
-  } catch (error) {
-    console.error('✗ Unable to connect to database:', error.message);
-    process.exit(1);
+// Retry connection function for Docker startup timing issues
+const testConnection = async (maxRetries = 10, retryDelay = 3000) => {
+  console.log('=== Database Connection Info ===');
+  console.log(`Host: ${process.env.DB_HOST}:${process.env.DB_PORT || 5432}`);
+  console.log(`Database: ${process.env.DB_NAME}`);
+  console.log(`User: ${process.env.DB_USER}`);
+  console.log('================================');
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await sequelize.authenticate();
+      console.log(`✓ Database connection established successfully (attempt ${attempt}/${maxRetries})`);
+      return true;
+    } catch (error) {
+      console.error(`✗ Database connection attempt ${attempt}/${maxRetries} failed: ${error.message}`);
+
+      if (attempt < maxRetries) {
+        console.log(`   Retrying in ${retryDelay / 1000} seconds...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      } else {
+        console.error('✗ All database connection attempts failed.');
+        throw error;
+      }
+    }
   }
 };
 
 module.exports = { sequelize, testConnection };
+
