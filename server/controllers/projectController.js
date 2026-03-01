@@ -84,7 +84,7 @@ exports.getProjects = async (req, res) => {
         {
           model: Client,
           as: 'client',
-          attributes: ['id', 'company_name', 'rate_per_watt']
+          attributes: ['id', 'company_name', 'price_model', 'rate_per_watt', 'rate_per_panel']
         }
       ],
       order: [['created_at', 'DESC']],
@@ -693,8 +693,14 @@ exports.getProjectFinance = async (req, res) => {
     }
 
     const totalWatt = project.panel_watt * project.panel_quantity;
-    const revenue = project.client ?
-      parseFloat((totalWatt * parseFloat(project.client.rate_per_watt)).toFixed(2)) : 0;
+    let revenue = 0;
+    if (project.client) {
+      if (project.client.price_model === 'per_panel') {
+        revenue = parseFloat((project.panel_quantity * parseFloat(project.client.rate_per_panel || 0)).toFixed(2));
+      } else {
+        revenue = parseFloat((totalWatt * parseFloat(project.client.rate_per_watt || 0)).toFixed(2));
+      }
+    }
 
     const expenses = project.assignments.map(a => ({
       staff_name: a.staff.name,
