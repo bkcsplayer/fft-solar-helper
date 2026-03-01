@@ -15,7 +15,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # Configuration
-PROJECT_DIR="/www/wwwroot/fft-solar-helper"
+PROJECT_DIR="/www/wwwroot/solarhelper.khtain.com/fft-solar-helper"
 PM2_APP_NAME="fft-solar-api"
 API_PORT=6200
 BACKUP_DIR="$PROJECT_DIR/backups"
