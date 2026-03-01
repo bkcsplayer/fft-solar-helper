@@ -123,7 +123,7 @@ exports.getFinanceSummary = async (req, res) => {
     const completedProjects = await Project.findAll({
       where: {
         status: 'completed',
-        updated_at: {
+        completed_at: {
           [Op.between]: [startDate, endDate]
         }
       },
@@ -141,8 +141,13 @@ exports.getFinanceSummary = async (req, res) => {
 
     completedProjects.forEach(project => {
       if (project.client) {
-        const totalWatt = project.panel_watt * project.panel_quantity;
-        const projectIncome = totalWatt * parseFloat(project.client.rate_per_watt);
+        const totalWatt = (project.panel_watt || 0) * (project.panel_quantity || 0);
+        let projectIncome = 0;
+        if (project.client.price_model === 'per_panel') {
+          projectIncome = (project.panel_quantity || 0) * parseFloat(project.client.rate_per_panel || 0);
+        } else {
+          projectIncome = totalWatt * parseFloat(project.client.rate_per_watt || 0);
+        }
         totalProjectIncome += projectIncome;
         totalWattCompleted += totalWatt;
 
@@ -150,7 +155,10 @@ exports.getFinanceSummary = async (req, res) => {
           project_id: project.id,
           address: project.address,
           total_watt: totalWatt,
-          rate_per_watt: parseFloat(project.client.rate_per_watt),
+          rate: project.client.price_model === 'per_panel'
+            ? parseFloat(project.client.rate_per_panel || 0)
+            : parseFloat(project.client.rate_per_watt || 0),
+          price_model: project.client.price_model,
           income: projectIncome
         });
       }
@@ -233,7 +241,7 @@ exports.getFinanceSummary = async (req, res) => {
       ],
       where: {
         status: 'completed',
-        updated_at: {
+        completed_at: {
           [Op.between]: [startDate, endDate]
         }
       },
@@ -303,9 +311,15 @@ exports.getProjectFinanceReport = async (req, res) => {
     });
 
     const report = projects.map(project => {
-      const totalWatt = project.panel_watt * project.panel_quantity;
-      const revenue = project.client ?
-        totalWatt * parseFloat(project.client.rate_per_watt) : 0;
+      const totalWatt = (project.panel_watt || 0) * (project.panel_quantity || 0);
+      let revenue = 0;
+      if (project.client) {
+        if (project.client.price_model === 'per_panel') {
+          revenue = (project.panel_quantity || 0) * parseFloat(project.client.rate_per_panel || 0);
+        } else {
+          revenue = totalWatt * parseFloat(project.client.rate_per_watt || 0);
+        }
+      }
 
       const expense = project.assignments.reduce(
         (sum, a) => sum + parseFloat(a.calculated_pay || 0),

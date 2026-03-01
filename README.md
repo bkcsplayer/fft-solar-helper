@@ -2,7 +2,7 @@
 
 > 🌞 A comprehensive CRM management system for solar installation companies
 
-![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)
+![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)
 
@@ -29,6 +29,12 @@ FFT Solar CRM is a full-stack customer relationship management (CRM) system spec
 - **Document Upload** - Support for PDFs, images, and office documents
 - **Progress Tracking** - Visual construction phase monitoring
 - **Export Capabilities** - PDF and Excel export for reports
+
+### 🗄️ Data Management (v3.0 New)
+- **One-click Backup** - Export entire database to JSON file for safe keeping
+- **Data Restore** - Import data from backup file to restore after upgrades
+- **Database Reset** - Clear all data and restore to initial state (requires confirmation)
+- **Upgrade Protection** - Prevent data loss during application updates
 
 ### 📧 Email & Notifications (v2.1 New)
 - **Beautiful HTML Emails** - Professional, card-style email templates
@@ -160,6 +166,10 @@ fft-solar-crm/
 - `POST /api/files/upload` - Upload project files
 - `GET /uploads/:path` - Serve uploaded files
 - `DELETE /api/files/:id` - Delete file
+### Data Management (v3.0)
+- `GET /api/export/all` - Export all database data as JSON
+- `POST /api/export/import` - Import data from JSON backup
+- `POST /api/export/reset` - Reset database to initial state
 
 *Full API documentation coming soon*
 
@@ -251,6 +261,16 @@ Automatic calculation of:
 
 ## 📝 Version History
 
+### v3.0.0 (2026-02-28)
+- 🗄️ **Database Management**: Added Settings → Data Management tab with:
+  - 📥 **Export All Data**: One-click full database backup to JSON (14 tables, all records)
+  - 📤 **Import Data**: Restore from JSON backup with automatic sequence reset
+  - 🗑️ **Reset Database**: Clear all data with safety confirmation (type RESET)
+- 🔧 **Finance Logic Fix**: Corrected revenue calculation to use `completed_at` instead of `updated_at`
+- 💰 **Per-Panel Pricing**: Finance module now correctly supports both per-watt and per-panel pricing models
+- 📊 **Dashboard Consistency**: Dashboard and Finance Summary now return identical statistics
+- 🔄 **Data Flow Audit**: Complete audit and fix of Finance → Dashboard data pipeline
+
 ### v2.3.0 (2026-01-10)
 - 📊 **Data Import/Export**: Added universal data import/export functionality for Projects, Clients, Staff, Vehicles, and Assets (CSV/Excel support).
 - 💹 **Financial Views**: Implemented detailed Profit/Loss analysis views for both Dashboard and individual Projects.
@@ -295,4 +315,4 @@ Created for FFT Solar installation company management needs.
 
 ---
 
-**Note**: This is a production-ready v1.0 release. For questions or support, please open an issue on GitHub.
+**Note**: This is a production-ready v3.0 release with database backup/restore capabilities. For questions or support, please open an issue on GitHub.

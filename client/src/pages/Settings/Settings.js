@@ -25,8 +25,14 @@ import {
   VisibilityOff,
   Save as SaveIcon,
   Download as DownloadIcon,
+  Upload as UploadIcon,
   Language as LanguageIcon,
   CheckCircle as CheckCircleIcon,
+  Storage as StorageIcon,
+  DeleteForever as DeleteForeverIcon,
+  CloudUpload as CloudUploadIcon,
+  CloudDownload as CloudDownloadIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
 import api from '../../services/api';
 
@@ -50,6 +56,9 @@ const Settings = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [dbStats, setDbStats] = useState(null);
 
   // Profile state
   const [profile, setProfile] = useState({
@@ -229,11 +238,11 @@ const Settings = () => {
         responseType: 'blob'
       });
 
-      // Create download link
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `fft-solar-export-${Date.now()}.json`);
+      const date = new Date().toISOString().slice(0, 10);
+      link.setAttribute('download', `fft-solar-backup-${date}.json`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -245,6 +254,61 @@ const Settings = () => {
       showSnackbar('导出数据失败', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResetDatabase = async () => {
+    if (resetConfirmText !== 'RESET') {
+      showSnackbar('请输入 RESET 确认操作', 'warning');
+      return;
+    }
+    try {
+      setLoading(true);
+      const response = await api.post('/export/reset');
+      showSnackbar(response.data.message, 'success');
+      setResetConfirmText('');
+      // Reload page since user data has changed
+      setTimeout(() => window.location.reload(), 2000);
+    } catch (error) {
+      console.error('Failed to reset database:', error);
+      showSnackbar(error.response?.data?.error || '重置数据库失败', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImportData = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!window.confirm('⚠️ 导入数据将会覆盖当前所有数据！\n\n确定要继续吗？')) {
+      event.target.value = '';
+      return;
+    }
+
+    try {
+      setImporting(true);
+      const text = await file.text();
+      const importData = JSON.parse(text);
+
+      if (!importData.data) {
+        showSnackbar('无效的备份文件格式', 'error');
+        return;
+      }
+
+      const response = await api.post('/export/import', importData);
+      const results = response.data.results;
+      const totalRecords = Object.values(results).reduce((a, b) => a + b, 0);
+      showSnackbar(`数据导入成功！共导入 ${totalRecords} 条记录`, 'success');
+
+      // Reload page since data has changed
+      setTimeout(() => window.location.reload(), 2000);
+    } catch (error) {
+      console.error('Failed to import data:', error);
+      showSnackbar(error.response?.data?.error || '导入数据失败: ' + error.message, 'error');
+    } finally {
+      setImporting(false);
+      event.target.value = '';
     }
   };
 
@@ -265,6 +329,7 @@ const Settings = () => {
             <Tab icon={<SettingsIcon />} label="Company Info" iconPosition="start" />
             <Tab icon={<TelegramIcon />} label="API Settings" iconPosition="start" />
             <Tab icon={<LanguageIcon />} label="域名设置" iconPosition="start" />
+            <Tab icon={<StorageIcon />} label="数据管理" iconPosition="start" />
           </Tabs>
         </Box>
 
@@ -783,6 +848,177 @@ const Settings = () => {
                   Save API Settings
                 </Button>
               </Box>
+            </Grid>
+          </Grid>
+        </TabPanel>
+
+        {/* Data Management Tab */}
+        <TabPanel value={tabValue} index={5}>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom>
+                数据管理
+              </Typography>
+              <Divider sx={{ mb: 3 }} />
+            </Grid>
+
+            {/* Export */}
+            <Grid item xs={12} md={4}>
+              <Card sx={{ p: 3, height: '100%', border: '2px solid #e2e8f0', borderRadius: '16px' }}>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Box sx={{
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    borderRadius: '16px',
+                    p: 2,
+                    display: 'inline-flex',
+                    mb: 2,
+                  }}>
+                    <CloudDownloadIcon sx={{ color: 'white', fontSize: 40 }} />
+                  </Box>
+                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>
+                    导出数据
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    将所有数据库数据导出为 JSON 备份文件。建议在升级程序或迁移服务器之前执行。
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    startIcon={<DownloadIcon />}
+                    onClick={handleExportData}
+                    disabled={loading}
+                    sx={{
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      borderRadius: '12px',
+                      py: 1.5,
+                      fontWeight: 600,
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                      }
+                    }}
+                  >
+                    {loading ? '导出中...' : '导出全部数据'}
+                  </Button>
+                </Box>
+              </Card>
+            </Grid>
+
+            {/* Import */}
+            <Grid item xs={12} md={4}>
+              <Card sx={{ p: 3, height: '100%', border: '2px solid #e2e8f0', borderRadius: '16px' }}>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Box sx={{
+                    background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                    borderRadius: '16px',
+                    p: 2,
+                    display: 'inline-flex',
+                    mb: 2,
+                  }}>
+                    <CloudUploadIcon sx={{ color: 'white', fontSize: 40 }} />
+                  </Box>
+                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>
+                    导入数据
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    从 JSON 备份文件恢复数据。⚠️ 此操作将覆盖当前所有数据。
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    component="label"
+                    startIcon={<UploadIcon />}
+                    disabled={importing}
+                    sx={{
+                      background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                      borderRadius: '12px',
+                      py: 1.5,
+                      fontWeight: 600,
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                      }
+                    }}
+                  >
+                    {importing ? '导入中...' : '选择备份文件导入'}
+                    <input
+                      type="file"
+                      accept=".json"
+                      hidden
+                      onChange={handleImportData}
+                    />
+                  </Button>
+                </Box>
+              </Card>
+            </Grid>
+
+            {/* Reset */}
+            <Grid item xs={12} md={4}>
+              <Card sx={{ p: 3, height: '100%', border: '2px solid #fee2e2', borderRadius: '16px', background: '#fff5f5' }}>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Box sx={{
+                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                    borderRadius: '16px',
+                    p: 2,
+                    display: 'inline-flex',
+                    mb: 2,
+                  }}>
+                    <DeleteForeverIcon sx={{ color: 'white', fontSize: 40 }} />
+                  </Box>
+                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, color: '#dc2626' }}>
+                    清除所有数据
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    删除数据库中所有数据并恢复到初始状态。仅保留默认管理员账户 (admin/admin123)。
+                  </Typography>
+                  <Alert severity="warning" sx={{ mb: 2, textAlign: 'left' }}>
+                    <strong>⚠️ 此操作不可撤销！</strong>请先导出备份。
+                  </Alert>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    placeholder='输入 RESET 确认'
+                    value={resetConfirmText}
+                    onChange={(e) => setResetConfirmText(e.target.value)}
+                    sx={{ mb: 2 }}
+                  />
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    startIcon={<DeleteForeverIcon />}
+                    onClick={handleResetDatabase}
+                    disabled={loading || resetConfirmText !== 'RESET'}
+                    sx={{
+                      background: resetConfirmText === 'RESET'
+                        ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+                        : '#e5e7eb',
+                      borderRadius: '12px',
+                      py: 1.5,
+                      fontWeight: 600,
+                      color: resetConfirmText === 'RESET' ? 'white' : '#9ca3af',
+                      '&:hover': {
+                        background: resetConfirmText === 'RESET'
+                          ? 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)'
+                          : '#d1d5db',
+                      }
+                    }}
+                  >
+                    {loading ? '重置中...' : '清除所有数据'}
+                  </Button>
+                </Box>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12}>
+              <Alert severity="info" sx={{ borderRadius: '12px' }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                  💡 数据管理提示：
+                </Typography>
+                <Typography variant="body2">
+                  • <strong>定期备份</strong>：建议每周至少导出一次完整备份<br />
+                  • <strong>升级前备份</strong>：在程序升级或服务器迁移之前，务必先导出数据<br />
+                  • <strong>导入覆盖</strong>：导入操作会完全替换当前数据库中的所有数据<br />
+                  • <strong>备份文件</strong>：导出文件为 JSON 格式，可用文本编辑器查看内容
+                </Typography>
+              </Alert>
             </Grid>
           </Grid>
         </TabPanel>

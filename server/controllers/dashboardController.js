@@ -254,7 +254,7 @@ exports.getAnalytics = async (req, res) => {
         attributes: ['panel_watt', 'panel_quantity'],
         where: {
           status: 'completed',
-          updated_at: { [Op.between]: [startOfMonth, endOfMonth] }
+          completed_at: { [Op.between]: [startOfMonth, endOfMonth] }
         },
         raw: true
       });
