@@ -1,0 +1,388 @@
+{
+    "exportDate": "2026-02-28T12:00:00.000Z",
+    "version": "2.0",
+    "data": {
+        "users": [
+            {
+                "id": 1,
+                "username": "admin",
+                "password_hash": "$2a$10$UNcukqejRu/DN1ERKE7iV.IMdk0v7rbtQh6jjRC6bRSqVcWvhTFBS",
+                "name": "System Admin",
+                "email": "admin@fftsolar.com",
+                "phone": "416-000-0000",
+                "is_active": true,
+                "created_at": "2026-01-01T00:00:00.000Z",
+                "updated_at": "2026-02-01T00:00:00.000Z"
+            },
+            {
+                "id": 2,
+                "username": "manager",
+                "password_hash": "$2a$10$UNcukqejRu/DN1ERKE7iV.IMdk0v7rbtQh6jjRC6bRSqVcWvhTFBS",
+                "name": "项目经理",
+                "email": "manager@fftsolar.com",
+                "phone": "416-000-0001",
+                "is_active": true,
+                "created_at": "2026-01-15T00:00:00.000Z",
+                "updated_at": "2026-02-01T00:00:00.000Z"
+            }
+        ],
+        "clients": [
+            {
+                "id": 1,
+                "company_name": "加拿大阳光能源集团",
+                "contact_person": "David Chen",
+                "phone": "416-888-1111",
+                "email": "david@canadasolar.ca",
+                "price_model": "per_watt",
+                "rate_per_watt": "0.5200",
+                "rate_per_panel": null,
+                "address": "100 University Ave, Toronto, ON M5J 1V6",
+                "notes": "【MOCK】大客户，按瓦计价",
+                "is_active": true,
+                "created_at": "2026-01-10T09:00:00.000Z",
+                "updated_at": "2026-02-01T00:00:00.000Z"
+            },
+            {
+                "id": 2,
+                "company_name": "GreenPower Solutions Ltd",
+                "contact_person": "Sarah Wang",
+                "phone": "647-999-2222",
+                "email": "sarah@greenpower.ca",
+                "price_model": "per_panel",
+                "rate_per_watt": null,
+                "rate_per_panel": "180.00",
+                "address": "200 Bay Street, Toronto, ON M5J 2J5",
+                "notes": "【MOCK】按板计价客户，测试 per_panel 逻辑",
+                "is_active": true,
+                "created_at": "2026-01-20T09:00:00.000Z",
+                "updated_at": "2026-02-01T00:00:00.000Z"
+            }
+        ],
+        "staff": [
+            {
+                "id": 1,
+                "name": "张伟（Leader）",
+                "role": "leader",
+                "phone": "416-111-0001",
+                "email": "zhangwei@fftsolar.com",
+                "pay_type": "per_panel",
+                "pay_rate": "20.00",
+                "is_active": true,
+                "created_at": "2026-01-05T00:00:00.000Z",
+                "updated_at": "2026-02-01T00:00:00.000Z"
+            },
+            {
+                "id": 2,
+                "name": "李明（Installer）",
+                "role": "installer",
+                "phone": "416-111-0002",
+                "email": "liming@fftsolar.com",
+                "pay_type": "per_panel",
+                "pay_rate": "15.00",
+                "is_active": true,
+                "created_at": "2026-01-05T00:00:00.000Z",
+                "updated_at": "2026-02-01T00:00:00.000Z"
+            }
+        ],
+        "projects": [
+            {
+                "id": 1,
+                "address": "123 Maple Street, Mississauga, ON L5B 1M2",
+                "installation_date": "2026-02-10",
+                "client_id": 1,
+                "customer_name": "Tom Brown",
+                "customer_phone": "905-123-4567",
+                "panel_brand": "Canadian Solar 420W",
+                "panel_watt": 420,
+                "panel_quantity": 24,
+                "project_type": "standard",
+                "status": "completed",
+                "completed_at": "2026-02-15T16:00:00.000Z",
+                "notes": "【MOCK】已完成项目 - per_watt客户 - 应产生收入: 24×420×0.52 = $5,241.60",
+                "created_at": "2026-02-01T09:00:00.000Z",
+                "updated_at": "2026-02-15T16:00:00.000Z"
+            },
+            {
+                "id": 2,
+                "address": "456 Oak Avenue, Brampton, ON L6T 3R5",
+                "installation_date": "2026-02-18",
+                "client_id": 2,
+                "customer_name": "Lisa Zhang",
+                "customer_phone": "905-234-5678",
+                "panel_brand": "Longi 400W",
+                "panel_watt": 400,
+                "panel_quantity": 30,
+                "project_type": "standard",
+                "status": "completed",
+                "completed_at": "2026-02-22T16:00:00.000Z",
+                "notes": "【MOCK】已完成项目 - per_panel客户 - 应产生收入: 30×180 = $5,400.00",
+                "created_at": "2026-02-05T09:00:00.000Z",
+                "updated_at": "2026-02-22T16:00:00.000Z"
+            }
+        ],
+        "projectAssignments": [
+            {
+                "id": 1,
+                "project_id": 1,
+                "staff_id": 1,
+                "role_in_project": "leader",
+                "phase": "standard",
+                "calculated_pay": "480.00",
+                "paid_amount": "480.00",
+                "is_notified": true,
+                "assigned_at": "2026-02-10T08:00:00.000Z"
+            },
+            {
+                "id": 2,
+                "project_id": 1,
+                "staff_id": 2,
+                "role_in_project": "installer",
+                "phase": "standard",
+                "calculated_pay": "360.00",
+                "paid_amount": "0.00",
+                "is_notified": false,
+                "assigned_at": "2026-02-10T08:00:00.000Z"
+            },
+            {
+                "id": 3,
+                "project_id": 2,
+                "staff_id": 1,
+                "role_in_project": "leader",
+                "phase": "standard",
+                "calculated_pay": "600.00",
+                "paid_amount": "600.00",
+                "is_notified": true,
+                "assigned_at": "2026-02-18T08:00:00.000Z"
+            },
+            {
+                "id": 4,
+                "project_id": 2,
+                "staff_id": 2,
+                "role_in_project": "installer",
+                "phase": "standard",
+                "calculated_pay": "450.00",
+                "paid_amount": "450.00",
+                "is_notified": true,
+                "assigned_at": "2026-02-18T08:00:00.000Z"
+            }
+        ],
+        "projectProgress": [
+            {
+                "id": 1,
+                "project_id": 1,
+                "stage": "roof_base",
+                "is_completed": true,
+                "completed_at": "2026-02-11T10:00:00.000Z",
+                "completed_by": 1,
+                "inspection_status": "pass",
+                "inspection_date": "2026-02-12",
+                "created_at": "2026-02-10T08:00:00.000Z"
+            },
+            {
+                "id": 2,
+                "project_id": 1,
+                "stage": "roof_install",
+                "is_completed": true,
+                "completed_at": "2026-02-13T15:00:00.000Z",
+                "completed_by": 1,
+                "inspection_status": "pass",
+                "inspection_date": "2026-02-14",
+                "created_at": "2026-02-12T08:00:00.000Z"
+            },
+            {
+                "id": 3,
+                "project_id": 2,
+                "stage": "roof_base",
+                "is_completed": true,
+                "completed_at": "2026-02-19T12:00:00.000Z",
+                "completed_by": 1,
+                "inspection_status": "pass",
+                "inspection_date": "2026-02-20",
+                "created_at": "2026-02-18T08:00:00.000Z"
+            },
+            {
+                "id": 4,
+                "project_id": 2,
+                "stage": "electrical",
+                "is_completed": true,
+                "completed_at": "2026-02-21T14:00:00.000Z",
+                "completed_by": 2,
+                "inspection_status": "pass",
+                "inspection_date": "2026-02-22",
+                "created_at": "2026-02-20T08:00:00.000Z"
+            }
+        ],
+        "vehicles": [
+            {
+                "id": 1,
+                "plate_number": "CFFT 001",
+                "model": "Ford F-150 2023",
+                "current_mileage": 25000,
+                "notes": "【MOCK】主力工程车",
+                "is_active": true,
+                "created_at": "2026-01-01T00:00:00.000Z",
+                "updated_at": "2026-02-28T00:00:00.000Z"
+            },
+            {
+                "id": 2,
+                "plate_number": "CFFT 002",
+                "model": "Toyota RAV4 2024",
+                "current_mileage": 12000,
+                "notes": "【MOCK】日常用车",
+                "is_active": true,
+                "created_at": "2026-01-01T00:00:00.000Z",
+                "updated_at": "2026-02-28T00:00:00.000Z"
+            }
+        ],
+        "vehicleUsage": [
+            {
+                "id": 1,
+                "vehicle_id": 1,
+                "project_id": 1,
+                "staff_id": 1,
+                "usage_date": "2026-02-10",
+                "start_mileage": 24500,
+                "end_mileage": 24580,
+                "notes": "【MOCK】项目1出车 80km",
+                "created_at": "2026-02-10T17:00:00.000Z"
+            },
+            {
+                "id": 2,
+                "vehicle_id": 2,
+                "project_id": 2,
+                "staff_id": 2,
+                "usage_date": "2026-02-18",
+                "start_mileage": 11800,
+                "end_mileage": 11865,
+                "notes": "【MOCK】项目2出车 65km",
+                "created_at": "2026-02-18T17:00:00.000Z"
+            }
+        ],
+        "vehicleMaintenance": [
+            {
+                "id": 1,
+                "vehicle_id": 1,
+                "maintenance_date": "2026-02-05",
+                "maintenance_type": "机油更换",
+                "cost": "120.00",
+                "notes": "【MOCK】常规保养",
+                "created_at": "2026-02-05T10:00:00.000Z"
+            },
+            {
+                "id": 2,
+                "vehicle_id": 2,
+                "maintenance_date": "2026-02-20",
+                "maintenance_type": "轮胎更换",
+                "cost": "850.00",
+                "notes": "【MOCK】四条冬季胎",
+                "created_at": "2026-02-20T14:00:00.000Z"
+            }
+        ],
+        "vehicleMaintenanceLogs": [],
+        "assets": [
+            {
+                "id": 1,
+                "name": "Makita 电钻套装",
+                "asset_type": "工具",
+                "status": "in_use",
+                "current_holder_id": 1,
+                "purchase_date": "2026-01-15",
+                "purchase_cost": "599.99",
+                "notes": "【MOCK】张伟在用",
+                "created_at": "2026-01-15T00:00:00.000Z",
+                "updated_at": "2026-02-01T00:00:00.000Z"
+            },
+            {
+                "id": 2,
+                "name": "安全梯 28ft",
+                "asset_type": "设备",
+                "status": "available",
+                "current_holder_id": null,
+                "purchase_date": "2026-01-20",
+                "purchase_cost": "450.00",
+                "notes": "【MOCK】仓库存放",
+                "created_at": "2026-01-20T00:00:00.000Z",
+                "updated_at": "2026-02-01T00:00:00.000Z"
+            }
+        ],
+        "financeRecords": [
+            {
+                "id": 1,
+                "record_date": "2026-02-12",
+                "record_type": "income",
+                "category": "other_income",
+                "amount": "2000.00",
+                "project_id": null,
+                "staff_id": null,
+                "vehicle_id": null,
+                "is_recurring": false,
+                "notes": "【MOCK】手动收入 - 应出现在Dashboard和Finance统计中",
+                "created_by": 1,
+                "created_at": "2026-02-12T09:00:00.000Z"
+            },
+            {
+                "id": 2,
+                "record_date": "2026-02-25",
+                "record_type": "expense",
+                "category": "office",
+                "amount": "350.00",
+                "project_id": null,
+                "staff_id": null,
+                "vehicle_id": null,
+                "is_recurring": false,
+                "notes": "【MOCK】手动支出 - 办公用品采购 - 应出现在Dashboard和Finance统计中",
+                "created_by": 1,
+                "created_at": "2026-02-25T10:00:00.000Z"
+            }
+        ],
+        "recurringExpenses": [
+            {
+                "id": 1,
+                "name": "仓库月租",
+                "category": "rent",
+                "amount": "1500.00",
+                "frequency": "monthly",
+                "is_active": true,
+                "start_date": "2026-01-01",
+                "end_date": null,
+                "last_processed_date": "2026-02-01",
+                "notes": "【MOCK】每月固定支出",
+                "created_by": 1,
+                "created_at": "2026-01-01T00:00:00.000Z",
+                "updated_at": "2026-02-01T00:00:00.000Z"
+            },
+            {
+                "id": 2,
+                "name": "车辆保险",
+                "category": "insurance",
+                "amount": "3600.00",
+                "frequency": "yearly",
+                "is_active": true,
+                "start_date": "2026-01-15",
+                "end_date": null,
+                "last_processed_date": null,
+                "notes": "【MOCK】年付车辆保险",
+                "created_by": 1,
+                "created_at": "2026-01-15T00:00:00.000Z",
+                "updated_at": "2026-02-01T00:00:00.000Z"
+            }
+        ],
+        "systemSettings": []
+    },
+    "counts": {
+        "users": 2,
+        "clients": 2,
+        "staff": 2,
+        "projects": 2,
+        "projectAssignments": 4,
+        "projectProgress": 4,
+        "vehicles": 2,
+        "vehicleUsage": 2,
+        "vehicleMaintenance": 2,
+        "vehicleMaintenanceLogs": 0,
+        "assets": 2,
+        "financeRecords": 2,
+        "recurringExpenses": 2,
+        "systemSettings": 0
+    }
+}

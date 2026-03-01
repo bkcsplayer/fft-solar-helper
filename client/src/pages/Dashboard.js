@@ -10,6 +10,9 @@ import {
   Tab,
   useTheme,
   alpha,
+  IconButton,
+  Button,
+  Chip,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -19,6 +22,9 @@ import {
   People,
   DirectionsCar,
   Build,
+  ChevronLeft,
+  ChevronRight,
+  Today,
 } from '@mui/icons-material';
 import {
   LineChart,
@@ -180,7 +186,39 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
   const [financialDetailsOpen, setFinancialDetailsOpen] = useState(false);
-  const [detailsType, setDetailsType] = useState(0); // 0 for income, 1 for expense
+  const [detailsType, setDetailsType] = useState(0);
+
+  // Month picker state
+  const now = new Date();
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
+
+  const isCurrentMonth = selectedYear === now.getFullYear() && selectedMonth === now.getMonth() + 1;
+
+  const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+
+  const goToPrevMonth = () => {
+    if (selectedMonth === 1) {
+      setSelectedYear(selectedYear - 1);
+      setSelectedMonth(12);
+    } else {
+      setSelectedMonth(selectedMonth - 1);
+    }
+  };
+
+  const goToNextMonth = () => {
+    if (selectedMonth === 12) {
+      setSelectedYear(selectedYear + 1);
+      setSelectedMonth(1);
+    } else {
+      setSelectedMonth(selectedMonth + 1);
+    }
+  };
+
+  const goToCurrentMonth = () => {
+    setSelectedYear(now.getFullYear());
+    setSelectedMonth(now.getMonth() + 1);
+  };
 
   const handleOpenDetails = (type) => {
     setDetailsType(type);
@@ -190,8 +228,9 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true);
         const [overviewRes, chartRes, analyticsRes] = await Promise.all([
-          api.get('/dashboard/overview'),
+          api.get(`/dashboard/overview?year=${selectedYear}&month=${selectedMonth}`),
           api.get('/dashboard/charts?months=6'),
           api.get('/dashboard/analytics')
         ]);
@@ -206,7 +245,7 @@ const Dashboard = () => {
     };
 
     fetchData();
-  }, []);
+  }, [selectedYear, selectedMonth]);
 
   if (loading) {
     return (
@@ -252,19 +291,64 @@ const Dashboard = () => {
       mt: -3,
       p: 3,
     }}>
-      <Typography
-        variant="h4"
-        gutterBottom
-        sx={{
-          fontWeight: 800,
-          mb: 4,
-          color: '#0f172a',
-          letterSpacing: '-0.02em',
-          fontSize: '2rem'
-        }}
-      >
-        Operations Dashboard
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4, flexWrap: 'wrap', gap: 2 }}>
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: 800,
+            color: '#0f172a',
+            letterSpacing: '-0.02em',
+            fontSize: '2rem'
+          }}
+        >
+          Operations Dashboard
+        </Typography>
+
+        {/* Month Picker */}
+        <Box sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          background: 'white',
+          borderRadius: '16px',
+          px: 2,
+          py: 0.75,
+          boxShadow: '0 2px 12px rgba(0, 0, 0, 0.06)',
+        }}>
+          <IconButton onClick={goToPrevMonth} size="small" sx={{ color: '#3b82f6' }}>
+            <ChevronLeft />
+          </IconButton>
+          <Typography sx={{
+            fontWeight: 700,
+            fontSize: '1rem',
+            color: '#1e293b',
+            minWidth: '120px',
+            textAlign: 'center',
+          }}>
+            {selectedYear}年 {monthNames[selectedMonth - 1]}
+          </Typography>
+          <IconButton onClick={goToNextMonth} size="small" sx={{ color: '#3b82f6' }}>
+            <ChevronRight />
+          </IconButton>
+          {!isCurrentMonth && (
+            <Button
+              size="small"
+              startIcon={<Today />}
+              onClick={goToCurrentMonth}
+              sx={{
+                ml: 1,
+                borderRadius: '10px',
+                textTransform: 'none',
+                fontWeight: 600,
+                fontSize: '0.8rem',
+                color: '#3b82f6',
+              }}
+            >
+              本月
+            </Button>
+          )}
+        </Box>
+      </Box>
 
       {/* Modern Tabs */}
       <Box sx={{
