@@ -23,7 +23,7 @@ class DashboardService {
         const completedProjects = await Project.findAll({
             where: {
                 status: 'completed',
-                completed_at: { [Op.between]: [startDate, endDate] }
+                installation_date: { [Op.between]: [startDate, endDate] }
             },
             include: [
                 { model: Client, as: 'client' },
@@ -114,7 +114,7 @@ class DashboardService {
         const completedProjects = await Project.findAll({
             where: {
                 status: 'completed',
-                completed_at: { [Op.between]: [startDate, endDate] }
+                installation_date: { [Op.between]: [startDate, endDate] }
             },
             include: [
                 { model: Client, as: 'client', attributes: ['company_name', 'rate_per_watt', 'price_model', 'rate_per_panel'] },
@@ -124,7 +124,7 @@ class DashboardService {
                     include: [{ model: Staff, as: 'staff', attributes: ['name', 'role'] }]
                 }
             ],
-            attributes: ['id', 'address', 'panel_quantity', 'panel_watt', 'completed_at']
+            attributes: ['id', 'address', 'panel_quantity', 'panel_watt', 'installation_date', 'completed_at']
         });
 
         const incomeDetails = [];
@@ -144,7 +144,7 @@ class DashboardService {
                 id: p.id,
                 type: 'Project Revenue',
                 description: `${p.client?.company_name || 'Unknown Client'} - ${p.address}`,
-                date: p.completed_at,
+                date: p.installation_date || p.completed_at,
                 amount: parseFloat(amount.toFixed(2)),
                 category: 'project'
             });
@@ -157,7 +157,7 @@ class DashboardService {
                             id: `labor_${p.id}_${a.id}`,
                             type: 'Labor Cost',
                             description: `${a.staff?.name || 'Unknown Staff'} (${a.staff?.role || 'Staff'}) - ${p.address}`,
-                            date: p.completed_at,
+                            date: p.installation_date || p.completed_at,
                             amount: parseFloat(a.calculated_pay),
                             category: 'labor'
                         });

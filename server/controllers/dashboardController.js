@@ -32,7 +32,7 @@ exports.getOverview = async (req, res) => {
       completed_this_month: await Project.count({
         where: {
           status: 'completed',
-          completed_at: { [Op.between]: [startOfMonth, endOfMonth] }
+          installation_date: { [Op.between]: [startOfMonth, endOfMonth] }
         }
       })
     };
@@ -257,7 +257,7 @@ exports.getAnalytics = async (req, res) => {
         attributes: ['panel_watt', 'panel_quantity'],
         where: {
           status: 'completed',
-          completed_at: { [Op.between]: [startOfMonth, endOfMonth] }
+          installation_date: { [Op.between]: [startOfMonth, endOfMonth] }
         },
         raw: true
       });

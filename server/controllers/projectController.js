@@ -113,7 +113,14 @@ exports.getProjects = async (req, res) => {
       return project;
     });
 
-    res.json(projectsWithRevenue);
+    res.json({
+      data: projectsWithRevenue,
+      pagination: {
+        total: count,
+        page: parseInt(page),
+        limit: parseInt(limit)
+      }
+    });
   } catch (error) {
     console.error('Get projects error:', error);
     res.status(500).json({ error: 'Failed to fetch projects' });
