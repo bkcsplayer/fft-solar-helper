@@ -3,7 +3,8 @@ const { User } = require('../models');
 
 const authMiddleware = async (req, res, next) => {
   try {
-    const authHeader = req.header('Authorization');\n    const token = authHeader ? authHeader.replace('Bearer ', '') : undefined;
+    const authHeader = req.header('Authorization');
+    const token = authHeader ? authHeader.replace('Bearer ', '') : undefined;
 
     if (!token) {
       return res.status(401).json({ error: 'Authentication required' });
