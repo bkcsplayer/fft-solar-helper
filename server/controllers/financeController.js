@@ -247,7 +247,7 @@ exports.getFinanceSummary = async (req, res) => {
       },
       raw: true
     });
-    const totalWattInstalled = parseInt(totalWattResult[0]?.total_watt) || 0;
+    const totalWattInstalled = parseInt((totalWattResult[0] ? totalWattResult[0].total_watt : 0)) || 0;
 
     res.json({
       period: {

@@ -62,22 +62,22 @@ exports.getStaffStats = async (req, res) => {
 
     // Calculate statistics
     const totalIncome = assignments.reduce((sum, a) => sum + parseFloat(a.calculated_pay || 0), 0);
-    const totalPanels = assignments.reduce((sum, a) => sum + (a.project?.panel_quantity || 0), 0);
+    const totalPanels = assignments.reduce((sum, a) => sum + ((a.project ? a.project.panel_quantity : 0) || 0), 0);
     const projectCount = assignments.length;
 
     // Group by project address
     const projectDetails = assignments.map(assignment => ({
-      id: assignment.project?.id,
-      address: assignment.project?.address,
-      panel_quantity: assignment.project?.panel_quantity || 0,
-      panel_watt: assignment.project?.panel_watt || 0,
-      total_watt: assignment.project?.total_watt || 0,
+      id: (assignment.project ? assignment.project.id : null),
+      address: (assignment.project ? assignment.project.address : null),
+      panel_quantity: (assignment.project ? assignment.project.panel_quantity : 0) || 0,
+      panel_watt: (assignment.project ? assignment.project.panel_watt : null) || 0,
+      total_watt: (assignment.project ? assignment.project.total_watt : 0) || 0,
       role: assignment.role_in_project,
       income: parseFloat(assignment.calculated_pay || 0),
-      rate_per_watt: assignment.project?.client?.rate_per_watt || 0,
-      client_name: assignment.project?.client?.company_name,
+      rate_per_watt: (assignment.project && assignment.project.client ? assignment.project.client.rate_per_watt : 0) || 0,
+      client_name: (assignment.project && assignment.project.client ? assignment.project.client.company_name : null),
       assigned_at: assignment.assigned_at,
-      project_status: assignment.project?.status
+      project_status: (assignment.project ? assignment.project.status : null)
     }));
 
     res.json({

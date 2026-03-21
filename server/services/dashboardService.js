@@ -134,16 +134,16 @@ class DashboardService {
             // Revenue entry
             const totalWatt = (p.panel_watt || 0) * (p.panel_quantity || 0);
             let amount = 0;
-            if (p.client?.price_model === 'per_panel') {
+            if ((p.client ? p.client.price_model : null) === 'per_panel') {
                 amount = (p.panel_quantity || 0) * parseFloat(p.client.rate_per_panel || 0);
             } else {
-                amount = totalWatt * parseFloat(p.client?.rate_per_watt || 0);
+                amount = totalWatt * parseFloat((p.client ? p.client.rate_per_watt : 0) || 0);
             }
 
             incomeDetails.push({
                 id: p.id,
                 type: 'Project Revenue',
-                description: `${p.client?.company_name || 'Unknown Client'} - ${p.address}`,
+                description: `${(p.client ? p.client.company_name : "Unknown Client") || 'Unknown Client'} - ${p.address}`,
                 date: p.installation_date || p.completed_at,
                 amount: parseFloat(amount.toFixed(2)),
                 category: 'project'
@@ -156,7 +156,7 @@ class DashboardService {
                         expenseDetails.push({
                             id: `labor_${p.id}_${a.id}`,
                             type: 'Labor Cost',
-                            description: `${a.staff?.name || 'Unknown Staff'} (${a.staff?.role || 'Staff'}) - ${p.address}`,
+                            description: `${(a.staff ? a.staff.name : "Unknown Staff") || 'Unknown Staff'} (${(a.staff ? a.staff.role : "Staff") || 'Staff'}) - ${p.address}`,
                             date: p.installation_date || p.completed_at,
                             amount: parseFloat(a.calculated_pay),
                             category: 'labor'
@@ -202,7 +202,7 @@ class DashboardService {
             expenseDetails.push({
                 id: `veh_${v.id}`,
                 type: 'Vehicle Maintenance',
-                description: `${v.vehicle?.plate_number} (${v.vehicle?.model}) - ${v.service_type}`,
+                description: `${(v.vehicle ? v.vehicle.plate_number : "")} (${(v.vehicle ? v.vehicle.model : "")}) - ${v.service_type}`,
                 date: v.maintenance_date,
                 amount: parseFloat(v.cost),
                 category: 'vehicle'

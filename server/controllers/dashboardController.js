@@ -164,7 +164,7 @@ exports.getAnalytics = async (req, res) => {
             projects: 0
           };
         }
-        staffStats[name].panels += pa.project?.panel_quantity || 0;
+        staffStats[name].panels += (pa.project ? pa.project.panel_quantity : 0) || 0;
         staffStats[name].earnings += parseFloat(pa.calculated_pay || 0);
         staffStats[name].projects += 1;
       }
