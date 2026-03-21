@@ -3,6 +3,7 @@ module.exports = {
         {
             name: 'fft-solar-api',
             script: 'server/index.js',
+            interpreter: '/www/server/nodejs/v22.16.0/bin/node',
             instances: 1,
             autorestart: true,
             watch: false,
