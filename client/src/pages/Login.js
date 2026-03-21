@@ -236,26 +236,7 @@ const Login = () => {
             </Button>
           </Box>
 
-          <Box sx={{
-            mt: 4,
-            pt: 3,
-            borderTop: '1px solid #e2e8f0',
-            textAlign: 'center'
-          }}>
-            <Typography
-              variant="body2"
-              sx={{
-                color: '#94a3b8',
-                background: '#f8fafc',
-                display: 'inline-block',
-                px: 2,
-                py: 1,
-                borderRadius: '8px',
-              }}
-            >
-              Default Account: <strong>admin</strong> / <strong>admin123</strong>
-            </Typography>
-          </Box>
+          {/* Default account text removed */}
         </Box>
       </Container>
     </Box>
